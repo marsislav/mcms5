@@ -7,5 +7,9 @@
 
 
 {% block content %}
-Register a new user
+<h1>Register a new user</h1>
+<form action="/users/register/" method="post">
+  {% csrf_token %}
+  {{form}}
+<button class="btn dento-btn">Submit</button>
 {% endblock %}
