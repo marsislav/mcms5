@@ -1,0 +1,28 @@
+{% extends "layout.html" %}
+{% block title %}Posts lists{% endblock %}
+
+
+{% block content %}
+THIS IS POST LISTS  PAGE (EXTENDED)
+{% for post in posts %}
+    <h2>
+        <a href="{% url 'posts:page' slug=post.slug %}">
+        {{ post.title }}
+         
+        </a>
+    </h2>
+    <p>{{ post.body|striptags|truncatewords:40 }}</p>
+    <p><small>{{ post.date }}</small></p>
+{% endfor %}
+{% endblock %}
+
+
+{% block image %}
+THIS IS POST LISTS  PAGE (EXTENDED)
+{% for post in posts %}
+        <a href="{% url 'posts:page' slug=post.slug %}">
+         <img src="{{post.banner.url}}" alt="{{post.title}}"/>
+        </a>
+    
+{% endfor %}
+{% endblock %}
