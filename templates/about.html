@@ -1,5 +1,13 @@
 {% extends "layout.html" %}
-{% block title %}ABOUT{% endblock %}
+{# NOTE: {% extends %} must be the first tag, so the documentation comment follows it. #}
+{% comment %}
+about.html - the About page ("/about/").
+Served by mcms5.views.about. Extends layout.html and only overrides blocks.
+Context: page_title='About', breadcrumbs=[('About', '/about/')].
+PLACEHOLDER content. Note: a CMS Page with slug "about" would NOT be reachable,
+because the fixed /about/ route in mcms5/urls.py is matched first.
+{% endcomment %}
+{% block title %}About{% endblock %}
 {% block content %}
 THIS IS ABOUT PAGE (EXTENDED)
 {% endblock %}

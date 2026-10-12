@@ -1,4 +1,11 @@
 {% extends "layout.html" %}
+{# NOTE: {% extends %} must be the first tag, so the documentation comment follows it. #}
+{% comment %}
+home.html - the home page ("/").
+Served by mcms5.views.homepage. Extends layout.html and only overrides blocks.
+Context: page_title='Home', breadcrumbs=[] (empty trail -> "Home" is the active crumb).
+PLACEHOLDER content: replace the text in {% block content %} with the real home page.
+{% endcomment %}
 {% block title %}Home{% endblock %}
 {% block content %}
 THIS IS HOME PAGE (EXTENDED)

@@ -1,0 +1,13 @@
+{% extends "admin/change_form.html" %}
+{% comment %}
+admin/menus/menu/change_form.html - extends Django's stock admin change form for Menu.
+Selected by MenuAdmin.change_form_template (menus/admin.py).
+Only adds an "Edit structure" button to the top-right tools of an EXISTING menu
+(``original`` is empty on the "add" form, hence the {% if %}).
+{% endcomment %}
+{% block object-tools-items %}
+  {% if original %}
+  <li><a href="{% url 'admin:menus_menu_builder' original.pk %}" class="viewsitelink">Edit structure</a></li>
+  {% endif %}
+  {{ block.super }}
+{% endblock %}

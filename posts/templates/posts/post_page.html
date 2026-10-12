@@ -1,16 +1,21 @@
 {% extends "layout.html" %}
-{% block title %}
-    {{ post.title }} 
-{% endblock %}  
+{# NOTE: {% extends %} must be the first tag, so the documentation comment follows it. #}
+{% comment %}
+posts/post_page.html - a single blog post (served by posts.views.post_page).
 
+Context
+-------
+post         the Post instance
+page_title / breadcrumbs   used by layout.html (hero heading + breadcrumb bar)
 
-
+``post.body|safe`` is unescaped CKEditor HTML (trusted staff content only).
+``post.banner.url`` always exists: Post.banner defaults to media/fallback.png.
+{% endcomment %}
+{% block title %}{{ post.title }}{% endblock %}
 
 {% block content %}
 <h1>{{ post.title }}</h1>
- <img src="{{post.banner.url}}" alt="{{post.title}}"/>
-   <p><small>{{ post.date }}</small></p>
-    <div class="post-body">{{ post.body|safe }}</div>
-    
- 
+<img src="{{ post.banner.url }}" alt="{{ post.title }}"/>
+<p><small>{{ post.date }}</small></p>
+<div class="post-body">{{ post.body|safe }}</div>
 {% endblock %}

@@ -1,3 +1,1 @@
-from django.contrib import admin
-
-# Register your models here.
+"""users.admin - nothing to register; ``User`` is already in the admin via ``django.contrib.auth``."""

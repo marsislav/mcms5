@@ -1,6 +1,51 @@
+{% comment %}
+==============================================================================
+templates/layout.html - THE BASE TEMPLATE of the whole site
+==============================================================================
+Every public page extends this file:
+    {% extends "layout.html" %}
+It is a purchased/adapted "Dento" HTML theme turned into a Django template.
+
+BLOCKS a child template can override
+------------------------------------
+  title    text inside <title> (browser tab)
+  image    thumbnail column of the main content card (used by posts_list.html)
+  content  main content card body (every page puts its content here)
+
+CONTEXT VARIABLES this layout reads (all optional)
+--------------------------------------------------
+  page_title    text of the big hero heading. Default: "mCMS 5".
+                Set by the views (pages.views, posts.views, mcms5.views).
+  breadcrumbs   list of (label, url) pairs = the trail AFTER "Home".
+                  []            -> we are on the home page ("Home" shown as active)
+                  [("About","/about/")]            -> Home > About
+                  [("Blog","/posts/"),("Post","")] -> Home > Blog > Post
+                The LAST pair is rendered as plain text (current page), so its
+                url is ignored. See docs/breadcrumbs.md.
+  request       added by the 'request' context processor; needed by
+                {% render_menu %} to highlight the current menu item.
+
+TEMPLATE TAGS used
+------------------
+  {% load static %}      -> {% static 'css/style.css' %} resolves files from /static/
+  {% load menu_tags %}   -> {% render_menu 'primary' %} / {% render_menu 'footer' %}
+                            (menus/templatetags/menu_tags.py; menus edited in
+                            admin -> Menus -> "Edit structure")
+
+KNOWN PLACEHOLDERS (static demo content from the theme, not yet dynamic)
+-----------------------------------------------------------------------
+  * Top bar address / e-mail / social links, "Booking Now" button
+  * Second "Single Blog Item" card, pagination, sidebar widgets (search,
+    categories, recent news, ad banner)
+  * Footer text, opening hours, newsletter form, contact info
+  * Image paths like ./img/... point to files that are NOT in /static/ yet,
+    so those images are broken until they are added and wired with {% static %}.
+Replace these with real data/blocks as the site grows.
+==============================================================================
+{% endcomment %}
 
 <!DOCTYPE html>
-{% load static %}
+{% load static menu_tags %}
 <html lang="en">
 
 <head>
@@ -9,27 +54,39 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-  <!-- Title -->
- <title>{% block title %}} mCMS 5 {% endblock %}</title>
+  {% comment %}
+  Browser tab title. Child templates override {% block title %}. 
+{% endcomment %}
+ <title>{% block title %}mCMS 5{% endblock %}</title>
 
 
   <!-- Favicon -->
   <link rel="icon" href="./img/core-img/favicon.ico">
 
-  <!-- Core Stylesheet -->
+  {% comment %}
+  Stylesheets (served from the project's ./static folder via {% static %}).
+       Order matters: later files override earlier ones.
+         style.css       theme's main styles (includes the breadcrumb styles, section 16)
+         bootstrap       grid + components (breadcrumb, pagination, buttons...)
+         animate         animation classes (used with WOW.js)
+         classy-nav      responsive navigation menu (styles the {% render_menu %} output)
+         owl.carousel / magnific-popup   carousel / lightbox plugins
+         font-awesome    icon font (fa fa-home etc.)
+         style.oth.css   extra project-specific overrides 
+{% endcomment %}
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
     <link rel="stylesheet" href="{% static 'css/animate.css' %}">
     <link rel="stylesheet" href="{% static 'css/classy-nav.css' %}">
     <link rel="stylesheet" href="{% static 'css/owl.carousel.min.css' %}">
     <link rel="stylesheet" href="{% static 'css/magnific-popup.css' %}">
-    <link rel="stylesheet" href="{% static 'font-awesome.min.css' %}">
-    <link rel="stylesheet" href="{% static 'style-oth.css' %}">
+    <link rel="stylesheet" href="{% static 'css/font-awesome.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style.oth.css' %}">
 
 </head>
 
 <body>
-  <!-- Preloader -->
+  <!-- Preloader overlay; hidden by the theme JS (static/js/default-assets/active.js) once the page loads -->
   <div id="preloader">
     <div class="preload-content">
       <div id="dento-load"></div>
@@ -89,50 +146,8 @@
 
               <!-- Nav Start -->
               <div class="classynav">
-                <ul id="nav">
-                        <a href="/">Home</a>
-     <a href="/about">About</a>
-     <a href="{% url 'posts:list' %}">Posts</a>
-     {% for mp in menu_pages %}<a href="{{ mp.get_absolute_url }}">{{ mp.title }}</a>
-     {% endfor %}
-                  
-                  <li><a href="#">Pages</a>
-                    <ul class="dropdown">
-                      <li><a href="index.html">- Home</a></li>
-                      <li><a href="about.html">- About Us</a></li>
-                      <li><a href="service.html">- Service</a></li>
-                      <li><a href="pricing.html">- Pricing</a></li>
-                      <li><a href="blog.html">- Blog</a></li>
-                      <li><a href="blog-details.html">- Blog Details</a></li>
-                      <li><a href="contact.html">- Contact</a></li>
-                      <li><a href="#">- Dropdown</a>
-                        <ul class="dropdown">
-                          <li><a href="#">- Dropdown Item</a></li>
-                          <li><a href="#">- Dropdown Item</a>
-                            <ul class="dropdown">
-                              <li><a href="#">- Even Dropdown</a></li>
-                              <li><a href="#">- Even Dropdown</a></li>
-                              <li><a href="#">- Even Dropdown</a></li>
-                              <li><a href="#">- Even Dropdown</a></li>
-                            </ul>
-                          </li>
-                          <li><a href="#">- Dropdown Item</a></li>
-                          <li><a href="#">- Dropdown Item</a></li>
-                        </ul>
-                      </li>
-                    </ul>
-                  </li>
-                  <li><a href="about.html">About</a></li>
-                  <li><a href="service.html">Service</a></li>
-                  <li><a href="pricing.html">Pricing</a></li>
-                  <li><a href="#">Blog</a>
-                    <ul class="dropdown">
-                      <li><a href="blog.html">- Blog</a></li>
-                      <li><a href="blog-details.html">- Blog Details</a></li>
-                    </ul>
-                  </li>
-                  <li><a href="./contact.html">Contact</a></li>
-                </ul>
+                {# Main navigation. Items come from the "primary" Menu in the database. #}
+                {% render_menu 'primary' %}
               </div>
               <!-- Nav End -->
             </div>
@@ -146,12 +161,20 @@
   </header>
   <!-- ***** Header Area End ***** -->
 
-  <!-- ***** Breadcrumb Area Start ***** -->
+  {% comment %}
+  ***** Breadcrumb Area Start *****
+       Two parts:
+         1. hero banner with the page heading  ({{ page_title }})
+         2. breadcrumb trail                   ({{ breadcrumbs }})
+       Both are filled by the VIEW (see docs/breadcrumbs.md). The CSS for the
+       trail is in static/css/style.css under ".breadcumb--con .breadcrumb"
+       (note the theme's spelling "breadcumb"). 
+{% endcomment %}
   <div class="breadcumb-area bg-img bg-gradient-overlay" style="background-image: url(img/bg-img/12.jpg);">
     <div class="container h-100">
       <div class="row h-100 align-items-center">
         <div class="col-12">
-          <h2 class="title">Blog</h2>
+          <h2 class="title">{{ page_title|default:"mCMS 5" }}</h2>
         </div>
       </div>
     </div>
@@ -162,8 +185,21 @@
         <div class="col-12">
           <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
-              <li class="breadcrumb-item"><a href="#"><i class="fa fa-home"></i> Home</a></li>
-              <li class="breadcrumb-item active" aria-current="page">Blog</li>
+              {# "Home" is always the first crumb. If the view passed no trail we ARE on the home page, so it is shown as the active item without a link. #}
+              {% if breadcrumbs %}
+                <li class="breadcrumb-item"><a href="/"><i class="fa fa-home"></i> Home</a></li>
+                {# Each crumb is a (label, url) tuple, unpacked directly by the for-loop. #}
+                {% for label, url in breadcrumbs %}
+                  {# Last crumb = current page: plain text, no link, marked for screen readers. #}
+                  {% if forloop.last %}
+                    <li class="breadcrumb-item active" aria-current="page">{{ label }}</li>
+                  {% else %}
+                    <li class="breadcrumb-item"><a href="{{ url }}">{{ label }}</a></li>
+                  {% endif %}
+                {% endfor %}
+              {% else %}
+                <li class="breadcrumb-item active" aria-current="page"><i class="fa fa-home"></i> Home</li>
+              {% endif %}
             </ol>
           </nav>
         </div>
@@ -172,7 +208,7 @@
   </div>
   <!-- ***** Breadcrumb Area End ***** -->
 
-  <!-- *****Blog Area Start ***** -->
+  <!-- *****Blog Area Start ***** (main content + sidebar; the 8/4 column split is Bootstrap's grid) -->
   <section class="dento-blog-area mt-50">
     <div class="container">
       <div class="row">
@@ -182,6 +218,7 @@
           <div class="single-blog-item style-2 d-flex flex-wrap align-items-center mb-50">
             <!-- Blog Thumbnail -->
             <div class="blog-thumbnail">
+                {# BLOCK "image": optional thumbnail(s); posts_list.html fills it with post banners. #}
                 <p>{% block image %} {% endblock %}</p>
                 
             </div>
@@ -189,6 +226,7 @@
             <div class="blog-content">
                   
               <a href="./blog-details.html" class="post-title">    </a>
+              {# BLOCK "content": the main body of every page. #}
               <p>  {% block content %}
     {% endblock %}</p>
               <div class="post-meta">
@@ -198,26 +236,9 @@
             </div>
           </div>
 
-          <!-- Single Blog Item -->
-          <div class="single-blog-item style-2 d-flex flex-wrap align-items-center mb-50">
-            <!-- Blog Thumbnail -->
-            <div class="blog-thumbnail">
-              <a href="./blog-details.html">
-                <img src="./img/bg-img/18.jpg" alt="">
-              </a>
-            </div>
-            <!-- Blog Content -->
-            <div class="blog-content">
-              <a href="./blog-details.html" class="post-title">Why you should avoid sipping your drinks</a>
-              <p>Donec tempor, lorem et euismod eleifend, est lectus laoreet ante, sed accusan justo diam nec tincidunt interdum ante consectetur dapibus molestie ...</p>
-              <div class="post-meta">
-                <a href="#"><i class="icon_clock_alt"></i> 28 Sep 2026</a>
-                <a href="#"><i class="icon_chat_alt"></i> 3 Comments</a>
-              </div>
-            </div>
-          </div>
+    
 
-          <!-- Single Blog Item -->
+          <!-- PLACEHOLDER demo blog card (static theme content, not dynamic) -->
           <div class="single-blog-item style-2 d-flex flex-wrap align-items-center mb-50">
             <!-- Blog Thumbnail -->
             <div class="blog-thumbnail">
@@ -246,7 +267,7 @@
           </nav>
         </div>
 
-        <!-- Dento Sidebar Area -->
+        <!-- Sidebar Area (PLACEHOLDER theme content: search, categories, recent news, ad) -->
         <div class="col-12 col-lg-4">
           <div class="dento-sidebar">
 
@@ -322,7 +343,7 @@
   </section>
   <!-- *****Blog Area End ***** -->
 
-  <!-- ***** Footer Area Start ***** -->
+  <!-- ***** Footer Area Start *****  (contact + hours + newsletter are static placeholders; Quick Link uses the dynamic "footer" menu) -->
   <footer class="footer-area bg-img bg-gradient-overlay" style="background-image: url(img/bg-img/3.jpg);">
     <div class="container">
       <div class="row">
@@ -364,18 +385,8 @@
 
             <!-- Quick Links Nav -->
             <nav>
-              <ul class="quick-links">
-                <li><a href="#">About</a></li>
-                <li><a href="#">FAQs</a></li>
-                <li><a href="#">Contact</a></li>
-                <li><a href="#">Policy</a></li>
-                <li><a href="#">News</a></li>
-                <li><a href="#">Advisors</a></li>
-                <li><a href="#">Careers</a></li>
-                <li><a href="#">Dentist</a></li>
-                <li><a href="#">Services</a></li>
-                <li><a href="#">Legals</a></li>
-              </ul>
+              {# Footer links: the "footer" Menu from the database. #}
+              {% render_menu 'footer' %}
             </nav>
           </div>
         </div>
@@ -423,31 +434,24 @@ Copyright &copy;<script>document.write(new Date().getFullYear());</script> All r
   </footer>
   <!-- ***** Footer Area End ***** -->
 
-  <!-- ******* All JS ******* -->
-  <!-- jQuery js -->
- <!-- <script src="js/jquery.min.js"></script> -->
-  <!-- Popper js -->
-  <!--<script src="js/popper.min.js"></script>-->
-  <!-- Bootstrap js -->
-  <!--<script src="js/bootstrap.min.js"></script>-->
-  <!-- All js -->
-  <!--<script src="js/dento.bundle.js"></script>-->
-  <!-- Active js -->
- <!-- <script src="js/default-assets/active.js"></script>
-   <script src="{% static 'js/main.js' %}" defer></script>
+  <!-- ******* All JS *******
+       Loaded with `defer`: scripts download in parallel and run IN ORDER after the HTML is parsed.
+       jquery -> popper -> bootstrap (dependencies, order matters)
+       mcms.bundle.js          bundled theme plugins (owl carousel, magnific popup, wow, etc.)
+       default-assets/active.js theme initialisation (menu, preloader, sliders)
+       main.js                  project hook for custom JS (currently a stub) -->
+
+    <script src="{% static '/js/jquery.min.js' %}" defer></script>
+    <script src="{% static '/js/popper.min.js' %}" defer></script>
+    <script src="{% static '/js/bootstrap.min.js' %}" defer></script>
+    <script src="{% static 'js/mcms.bundle.js' %}" defer></script>
+    <script src="{% static 'js/default-assets/active.js' %}" defer></script>
     <script src="{% static 'js/main.js' %}" defer></script>
-     <script src="{% static 'js/main.js' %}" defer></script>
-      <script src="{% static 'js/main.js' %}" defer></script>
-       <script src="{% static 'js/main.js' %}" defer></script>
-        <script src="{% static 'js/main.js' %}" defer></script>
-         <script src="{% static 'js/main.js' %}" defer></script>-->
 
 </body>
 
 </html>
 
-
-<!-------------------------------------------------------------------------------------------------------------------------->
 
 
 

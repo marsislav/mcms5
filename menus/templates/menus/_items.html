@@ -1,0 +1,16 @@
+{% comment %}
+menus/_items.html - RECURSIVE partial: renders a list of menu Nodes as <li> elements.
+Included by menu.html for the top level and by itself for every sub-menu.
+
+Context: nodes (list of Node), menu (for submenu_class).
+Per Node: n.li_classes, n.href, n.label, n.rel, n.is_current, n.children and
+n.item.{element_id, link_classes, title_attr, new_tab}.
+The markup is deliberately kept on ONE line per <li>, because whitespace
+between inline elements can show up as visual gaps in themes.
+Attributes are only output when they have a value; Django auto-escapes all values.
+{% endcomment %}
+{% for n in nodes %}<li{% if n.item.element_id %} id="{{ n.item.element_id }}"{% endif %} class="{{ n.li_classes }}"><a href="{{ n.href }}"{% if n.item.link_classes %} class="{{ n.item.link_classes }}"{% endif %}{% if n.item.title_attr %} title="{{ n.item.title_attr }}"{% endif %}{% if n.item.new_tab %} target="_blank"{% endif %}{% if n.rel %} rel="{{ n.rel }}"{% endif %}{% if n.is_current %} aria-current="page"{% endif %}>{{ n.label }}</a>{% if n.children %}
+<ul{% if menu.submenu_class %} class="{{ menu.submenu_class }}"{% endif %}>
+{% include "menus/_items.html" with nodes=n.children %}
+</ul>{% endif %}</li>
+{% endfor %}

@@ -1,0 +1,9 @@
+{% comment %}
+menus/menu.html - outer <ul> of a menu. Rendered by the {% render_menu %} tag
+(menus/templatetags/menu_tags.py).
+Context: menu (Menu: ul_id / ul_class), nodes (list of top-level Node objects).
+The items themselves are produced by the recursive partial _items.html.
+{% endcomment %}
+<ul{% if menu.ul_id %} id="{{ menu.ul_id }}"{% endif %}{% if menu.ul_class %} class="{{ menu.ul_class }}"{% endif %}>
+{% include "menus/_items.html" with nodes=nodes %}
+</ul>

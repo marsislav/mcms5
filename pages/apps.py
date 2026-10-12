@@ -1,3 +1,4 @@
+"""pages.apps - app configuration (registered as ``'pages'`` in INSTALLED_APPS)."""
 from django.apps import AppConfig
 
 

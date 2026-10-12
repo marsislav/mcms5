@@ -1,0 +1,434 @@
+{% extends "admin/base_site.html" %}
+{% comment %}
+==============================================================================
+admin/menus/menu/builder.html - the drag-and-drop MENU BUILDER (admin screen)
+==============================================================================
+URL:      /admin/menus/menu/<id>/builder/      (MenuAdmin.builder_view in menus/admin.py)
+Extends:  Django's admin base_site.html, so it gets the normal admin header/theme.
+
+CONTEXT (from MenuAdmin.builder_view)
+  menu          the Menu being edited (name, slug)
+  builder_data  dict that is embedded as JSON (see {{ builder_data|json_script }} below):
+                  items    [{id,type,object_id,label,url,depth,...}]  current menu items
+                  pages    [{id,title,path,published}]  pages the editor may add
+                  posts    [{id,title,path,published}]  posts the editor may add
+                  saveUrl  AJAX endpoint (MenuAdmin.builder_save)
+                  maxDepth maximum nesting depth (menus.builder.MAX_DEPTH)
+  title, opts, + admin each_context  (used by the admin chrome)
+
+PAGE STRUCTURE
+  #mb-left   "add" boxes: Pages, Posts, Custom link
+  #mb-right  Save buttons + #mb-items, the sortable list (<ul>) built by JavaScript
+
+DATA FLOW
+  server --(json_script #mb-data)--> JS `items` array --(edit in browser)-->
+  POST JSON to saveUrl --> menus.builder.save_items --> JSON reply with the
+  normalised items --> JS replaces its array and re-renders.
+  Nothing is stored until "Save menu" is pressed.
+
+The page is fully self-contained (inline CSS + JS, no external libraries), and
+colours use Django admin CSS variables (--body-bg etc.) so dark mode works.
+{% endcomment %}
+{% block extrastyle %}{{ block.super }}
+<style>
+  /* ---- Menu builder styles. Prefix "mb-" = menu builder (avoids clashes with admin CSS). ---- */
+  /* Two-column layout: 320px "add" column + flexible list; stacks on narrow screens. */
+  #mb { display: grid; grid-template-columns: 320px minmax(0, 1fr); gap: 20px; align-items: start; }
+  @media (max-width: 900px) { #mb { grid-template-columns: 1fr; } }
+  .mb-box { border: 1px solid var(--hairline-color, #ddd); background: var(--body-bg, #fff); border-radius: 4px; margin-bottom: 12px; }
+  .mb-box > h3 { margin: 0; padding: 10px 12px; font-size: 14px; background: var(--darkened-bg, #f8f8f8); border-bottom: 1px solid var(--hairline-color, #ddd); cursor: pointer; color: var(--body-fg, #333); }
+  .mb-box > .mb-box-body { padding: 10px 12px; }
+  .mb-box.collapsed > .mb-box-body { display: none; }
+  .mb-list { max-height: 220px; overflow: auto; border: 1px solid var(--hairline-color, #ddd); padding: 6px 8px; margin: 8px 0; }
+  .mb-list label { display: block; padding: 2px 0; font-size: 13px; }
+  .mb-list small { color: var(--body-quiet-color, #888); }
+  #mb input[type=text], #mb input[type=url], #mb select { width: 100%; box-sizing: border-box; }
+  .mb-row { margin-bottom: 8px; }
+  .mb-row > label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 2px; }
+  .mb-btn { cursor: pointer; }
+  #mb-items { list-style: none; margin: 0; padding: 0; min-height: 40px; }
+  .mb-item { margin: 0 0 6px 0; padding: 0; list-style: none; }
+  .mb-head { display: flex; align-items: center; gap: 8px; border: 1px solid var(--hairline-color, #ccc); background: var(--darkened-bg, #f8f8f8); padding: 7px 10px; border-radius: 4px; }
+  .mb-item.is-off .mb-head { opacity: .55; }
+  .mb-handle { cursor: grab; user-select: none; font-size: 16px; line-height: 1; color: var(--body-quiet-color, #777); }
+  .mb-title { flex: 1; min-width: 0; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mb-badge { font-size: 11px; padding: 1px 6px; border-radius: 9px; background: var(--hairline-color, #ddd); color: var(--body-fg, #333); white-space: nowrap; }
+  .mb-badge.bad { background: #ba2121; color: #fff; }
+  .mb-actions button { padding: 2px 7px; margin-left: 2px; cursor: pointer; border: 1px solid var(--hairline-color, #ccc); background: var(--body-bg, #fff); color: var(--body-fg, #333); border-radius: 3px; }
+  .mb-actions button:disabled { opacity: .3; cursor: default; }
+  .mb-body { border: 1px solid var(--hairline-color, #ccc); border-top: 0; padding: 12px; display: none; background: var(--body-bg, #fff); }
+  .mb-item.open > .mb-body { display: block; }
+  .mb-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
+  /* Drag & drop feedback: line above / below the target, dashed outline = "becomes a child". */
+  .mb-item.drop-before > .mb-head { box-shadow: 0 -3px 0 0 var(--primary, #417690); }
+  .mb-item.drop-after > .mb-head { box-shadow: 0 3px 0 0 var(--primary, #417690); }
+  .mb-item.drop-child > .mb-head { outline: 2px dashed var(--primary, #417690); }
+  .mb-item.dragging { opacity: .4; }
+  .mb-empty { padding: 18px; border: 2px dashed var(--hairline-color, #ccc); text-align: center; color: var(--body-quiet-color, #888); }
+  /* Success / error banner shown after Save. */
+  #mb-status { margin: 0 0 10px; padding: 8px 12px; border-radius: 4px; display: none; }
+  #mb-status.ok { display: block; background: #dfd; color: #060; }
+  #mb-status.err { display: block; background: #fdd; color: #900; }
+  .mb-savebar { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; }
+  .mb-hint { font-size: 12px; color: var(--body-quiet-color, #777); margin: 0 0 10px; }
+</style>
+{% endblock %}
+
+{# This is the ADMIN's own breadcrumb block (Home > Menus > <name>), unrelated to the public-site breadcrumbs. #}
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">Home</a> &rsaquo;
+  <a href="{% url 'admin:menus_menu_changelist' %}">Menus</a> &rsaquo;
+  {{ menu.name }}
+</div>
+{% endblock %}
+
+{% block content %}
+<p class="mb-hint">
+  Add items from the left column, then drag them to reorder (drop onto the middle of another item to make it a sub-item) or use the arrows ↑ ↓ ← →.
+  Templates render this menu with <code>{% templatetag openblock %} render_menu '{{ menu.slug }}' {% templatetag closeblock %}</code>.
+  <a href="{% url 'admin:menus_menu_change' menu.pk %}">Menu settings (name, slug, &lt;ul&gt; classes)</a>
+</p>
+<div id="mb-status" role="status"></div>
+
+<div id="mb">
+  <div id="mb-left">
+    <div class="mb-box" data-box="pages">
+      <h3>Pages</h3>
+      <div class="mb-box-body">
+        <input type="text" class="mb-filter" placeholder="Search...">
+        <div class="mb-list" data-list="pages"></div>
+        <button type="button" class="button mb-add-objects" data-kind="pages">Add to menu</button>
+      </div>
+    </div>
+    <div class="mb-box collapsed" data-box="posts">
+      <h3>Posts</h3>
+      <div class="mb-box-body">
+        <input type="text" class="mb-filter" placeholder="Search...">
+        <div class="mb-list" data-list="posts"></div>
+        <button type="button" class="button mb-add-objects" data-kind="posts">Add to menu</button>
+      </div>
+    </div>
+    <div class="mb-box" data-box="custom">
+      <h3>Custom link</h3>
+      <div class="mb-box-body">
+        <div class="mb-row"><label for="mb-c-url">URL</label><input type="text" id="mb-c-url" value="https://" placeholder="/about/ or https://..."></div>
+        <div class="mb-row"><label for="mb-c-label">Title</label><input type="text" id="mb-c-label"></div>
+        <button type="button" class="button" id="mb-add-custom">Add to menu</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="mb-right">
+    <div class="mb-savebar">
+      <button type="button" class="button default" id="mb-save-top">Save menu</button>
+      <span id="mb-dirty" style="display:none;color:var(--body-quiet-color,#888)">unsaved changes</span>
+    </div>
+    <ul id="mb-items"></ul>
+    <div class="mb-savebar" style="margin-top:12px">
+      <button type="button" class="button default" id="mb-save-bottom">Save menu</button>
+    </div>
+  </div>
+</div>
+
+{# Safely embeds the Python dict as <script type="application/json" id="mb-data"> (escapes </script> etc.). #}
+{{ builder_data|json_script:"mb-data" }}
+<script>
+/*
+ * MENU BUILDER SCRIPT
+ * ===================
+ * State
+ *   items  flat array in display order; nesting = integer `depth` per item.
+ *          Each item also gets client-only fields: uid (stable id for drag &
+ *          drop, since new items have no database id yet), open (settings
+ *          panel expanded), _li / _titleEl (DOM references).
+ *   dirty  true when there are unsaved changes (shows a hint, warns on leave).
+ *
+ * Sections
+ *   1. tree helpers    move/indent/outdent/remove a whole BLOCK (item + its descendants)
+ *   2. rendering       render() rebuilds the whole list from `items` (simple + fast enough)
+ *   3. left column     filter/add pages, posts, custom links
+ *   4. save            POST JSON to D.saveUrl, then adopt the server's normalised copy
+ *
+ * Why a flat list + depth? Moving blocks is simple array splicing, and it is
+ * exactly the format the server's menus.builder.save_items expects.
+ */
+(function () {
+  'use strict';
+  var D = JSON.parse(document.getElementById('mb-data').textContent);  // data from json_script above
+  // MAXD: nesting limit (same value the server enforces). CSRF: token Django requires on POST.
+  var MAXD = D.maxDepth, CSRF = "{{ csrf_token }}";
+  var TYPE_LABEL = {page: 'Page', post: 'Post', custom: 'Link'};
+  var uidCounter = 0, items = [], dirty = false, dragUid = null;
+  var VIS = [['all', 'Everyone'], ['guests', 'Logged-out visitors only'], ['users', 'Logged-in users only'], ['staff', 'Staff only']];
+
+  // Add the client-only fields to an item coming from the server / left column.
+  function wrap(i) { i.uid = ++uidCounter; i.open = !!i.open; return i; }
+  items = D.items.map(wrap);
+
+  // Tiny DOM helper: h('div', {class:'x', text:'hi', onclick: fn}, [children]). Uses textContent
+  // (never innerHTML) for text, so titles containing HTML cannot inject markup.
+  function h(tag, props, kids) {
+    var e = document.createElement(tag);
+    Object.keys(props || {}).forEach(function (k) {
+      if (k === 'text') e.textContent = props[k];
+      else if (k === 'class') e.className = props[k];
+      else if (k.slice(0, 2) === 'on') e.addEventListener(k.slice(2), props[k]);
+      else e.setAttribute(k, props[k]);
+    });
+    (kids || []).forEach(function (c) { if (c) e.appendChild(c); });
+    return e;
+  }
+  function $(s, r) { return (r || document).querySelector(s); }
+  function $$(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
+
+  // Show/hide the 'unsaved changes' hint.
+  function setDirty(v) { dirty = v; $('#mb-dirty').style.display = v ? '' : 'none'; }
+  // Show a banner message; kind = 'ok' | 'err'; empty msg hides it.
+  function status(msg, kind) { var s = $('#mb-status'); s.textContent = msg || ''; s.className = msg ? kind : ''; }
+
+  // ---- tree helpers (flat list + depth) -----------------------------------
+  // blockEnd(i): index just AFTER the item i and all its descendants (items with greater depth right below it).
+  function blockEnd(i) { var j = i + 1; while (j < items.length && items[j].depth > items[i].depth) j++; return j; }
+  // Deepest depth inside the block of item i (used to refuse moves that would exceed MAXD).
+  function blockMaxDepth(i) { var m = items[i].depth, e = blockEnd(i); for (var k = i; k < e; k++) m = Math.max(m, items[k].depth); return m; }
+  // Change the depth of every item in `block` by `delta` (keeps sub-trees intact).
+  function shift(block, delta) { block.forEach(function (it) { it.depth += delta; }); }
+
+  // Move the block above its previous SIBLING (same depth); no-op for the first sibling.
+  function moveUp(i) {
+    var d = items[i].depth, k = i - 1;
+    while (k >= 0 && items[k].depth > d) k--;
+    if (k < 0 || items[k].depth !== d) return;
+    var block = items.splice(i, blockEnd(i) - i);
+    Array.prototype.splice.apply(items, [k, 0].concat(block));
+  }
+  // Move the block below its next sibling (the sibling's whole block jumps over it).
+  function moveDown(i) {
+    var e = blockEnd(i);
+    if (e >= items.length || items[e].depth !== items[i].depth) return;
+    var nextLen = blockEnd(e) - e;
+    var block = items.splice(i, e - i);
+    Array.prototype.splice.apply(items, [i + nextLen, 0].concat(block));
+  }
+  // '->' : become a child of the previous item. Not allowed for the first item, when already
+  // deeper than the previous item, or when the block would exceed MAXD.
+  function indent(i) {
+    if (i === 0 || items[i].depth > items[i - 1].depth || blockMaxDepth(i) + 1 > MAXD) return;
+    shift(items.slice(i, blockEnd(i)), 1);
+  }
+  // '<-' : move one level out (children follow).
+  function outdent(i) {
+    if (items[i].depth === 0) return;
+    shift(items.slice(i, blockEnd(i)), -1);
+  }
+  // Remove the item AND its descendants from the list (deleted in the DB on save).
+  function remove(i) { items.splice(i, blockEnd(i) - i); }
+
+  // Drag & drop: move block `srcUid` relative to target `tgtUid`.
+  // zone: 'before' | 'after' (same level as the target) | 'child' (becomes the target's sub-item).
+  // A block cannot be dropped into itself.
+  function dropOn(srcUid, tgtUid, zone) {
+    var s = items.findIndex(function (x) { return x.uid === srcUid; });
+    var t = items.findIndex(function (x) { return x.uid === tgtUid; });
+    if (s < 0 || t < 0) return;
+    var sEnd = blockEnd(s);
+    if (t >= s && t < sEnd) return; // can't drop into itself
+    var newDepth = items[t].depth + (zone === 'child' ? 1 : 0);
+    var delta = newDepth - items[s].depth;
+    if (blockMaxDepth(s) + delta > MAXD) { status('The maximum nesting level has been reached.', 'err'); return; }
+    var block = items.splice(s, sEnd - s);
+    t = items.findIndex(function (x) { return x.uid === tgtUid; });
+    var at = zone === 'before' ? t : blockEnd(t);
+    shift(block, delta);
+    Array.prototype.splice.apply(items, [at, 0].concat(block));
+  }
+
+  // ---- rendering ---------------------------------------------------------
+  // Title shown in the row: explicit label, else the page/post title, else the URL.
+  function titleOf(it) { return it.label || it.default_label || it.url || '(no title)'; }
+
+  // Builds a labelled text input bound to item[prop] (updates the row title live for 'label').
+  function field(label, prop, it, opts) {
+    opts = opts || {};
+    var input = h('input', {type: 'text', value: it[prop] || '', placeholder: opts.placeholder || ''});
+    input.addEventListener('input', function () {
+      it[prop] = input.value; setDirty(true);
+      if (prop === 'label') it._titleEl.textContent = titleOf(it);
+    });
+    return h('div', {class: 'mb-row'}, [h('label', {text: label}), input]);
+  }
+  // Builds a labelled checkbox bound to item[prop].
+  function check(label, prop, it) {
+    var cb = h('input', {type: 'checkbox'});
+    cb.checked = !!it[prop];
+    cb.addEventListener('change', function () {
+      it[prop] = cb.checked; setDirty(true);
+      if (prop === 'is_active') it._li.classList.toggle('is-off', !cb.checked);
+    });
+    return h('label', {style: 'display:inline-block;margin-right:16px'}, [cb, document.createTextNode(' ' + label)]);
+  }
+
+  // Rebuild the whole sortable list from `items`. Indentation = depth * 28px.
+  // The row is draggable only while the mouse is down on the handle (so text inputs stay usable).
+  function render() {
+    var ul = $('#mb-items');
+    ul.innerHTML = '';
+    if (!items.length) {
+      ul.appendChild(h('li', {class: 'mb-empty', text: 'The menu is empty. Add pages, posts or links from the left column.'}));
+      return;
+    }
+    items.forEach(function (it, i) {
+      var li = h('li', {class: 'mb-item' + (it.open ? ' open' : '') + (it.is_active ? '' : ' is-off'),
+                        style: 'margin-left:' + (it.depth * 28) + 'px'});
+      it._li = li;
+      var handle = h('span', {class: 'mb-handle', title: 'Drag', text: '⠿'});
+      handle.addEventListener('mousedown', function () { li.draggable = true; });
+      var titleEl = h('span', {class: 'mb-title', text: titleOf(it)});
+      it._titleEl = titleEl;
+      var badges = [h('span', {class: 'mb-badge', text: TYPE_LABEL[it.type]})];
+      if (it.missing) badges.push(h('span', {class: 'mb-badge bad', text: 'target missing'}));
+
+      function btn(txt, title, fn, disabled) {
+        var b = h('button', {type: 'button', title: title, text: txt});
+        b.disabled = !!disabled;
+        b.addEventListener('click', function () { fn(i); setDirty(true); render(); });
+        return b;
+      }
+      var canUp = (function () { var k = i - 1, d = it.depth; while (k >= 0 && items[k].depth > d) k--; return k >= 0 && items[k].depth === d; })();
+      var e = blockEnd(i), canDown = e < items.length && items[e].depth === it.depth;
+      var canIn = i > 0 && it.depth <= items[i - 1].depth && blockMaxDepth(i) + 1 <= MAXD;
+      var actions = h('span', {class: 'mb-actions'}, [
+        btn('↑', 'Move up', moveUp, !canUp), btn('↓', 'Move down', moveDown, !canDown),
+        btn('←', 'Outdent (one level out)', outdent, it.depth === 0), btn('→', 'Indent (make sub-item)', indent, !canIn)
+      ]);
+      var toggle = h('button', {type: 'button', title: 'Settings', text: '▾'});
+      toggle.addEventListener('click', function () { it.open = !it.open; li.classList.toggle('open', it.open); });
+      actions.appendChild(toggle);
+
+      var head = h('div', {class: 'mb-head'}, [handle, titleEl].concat(badges).concat([actions]));
+
+      var body = h('div', {class: 'mb-body'});
+      body.appendChild(field('Title', 'label', it, {placeholder: it.default_label || ''}));
+      if (it.type === 'custom') body.appendChild(field('URL', 'url', it, {placeholder: '/about/ or https://...'}));
+      else if (it.missing) body.appendChild(h('p', {class: 'errornote', text: 'The target ' + (it.type === 'page' ? 'page' : 'post') + ' was deleted. Remove this item.'}));
+      var grid = h('div', {class: 'mb-grid'}, [
+        field('CSS classes (on <li>)', 'css_classes', it, {placeholder: 'btn my-class'}),
+        field('CSS classes (on <a>)', 'link_classes', it),
+        field('ID (on <li>)', 'element_id', it, {placeholder: 'menu-contact'}),
+        field('Title attribute', 'title_attr', it),
+        field('rel', 'rel', it, {placeholder: 'nofollow'}),
+      ]);
+      var sel = h('select');
+      VIS.forEach(function (v) { var o = h('option', {value: v[0], text: v[1]}); if (it.visibility === v[0]) o.selected = true; sel.appendChild(o); });
+      sel.addEventListener('change', function () { it.visibility = sel.value; setDirty(true); });
+      grid.appendChild(h('div', {class: 'mb-row'}, [h('label', {text: 'Who can see it'}), sel]));
+      body.appendChild(grid);
+      body.appendChild(h('div', {class: 'mb-row'}, [check('Show in menu', 'is_active', it), check('Open in a new window', 'new_tab', it)]));
+      var rm = h('a', {href: '#', class: 'deletelink', text: 'Remove'});
+      rm.addEventListener('click', function (ev) { ev.preventDefault(); remove(i); setDirty(true); render(); });
+      body.appendChild(rm);
+
+      li.appendChild(head); li.appendChild(body);
+
+      li.addEventListener('dragstart', function (ev) {
+        dragUid = it.uid; li.classList.add('dragging');
+        ev.dataTransfer.effectAllowed = 'move'; ev.dataTransfer.setData('text/plain', String(it.uid));
+      });
+      li.addEventListener('dragend', function () { dragUid = null; li.draggable = false; clearDrop(); li.classList.remove('dragging'); });
+      li.addEventListener('dragover', function (ev) {
+        if (dragUid === null || dragUid === it.uid) return;
+        ev.preventDefault(); clearDrop(); li.classList.add('drop-' + zoneOf(ev, head));
+      });
+      li.addEventListener('drop', function (ev) {
+        if (dragUid === null) return;
+        ev.preventDefault();
+        var z = zoneOf(ev, head), src = dragUid;
+        dragUid = null; clearDrop(); dropOn(src, it.uid, z); setDirty(true); render();
+      });
+      ul.appendChild(li);
+    });
+  }
+  // Where inside the target row the cursor is: top 28% = before, bottom 28% = after, middle = child.
+  function zoneOf(ev, head) {
+    var r = head.getBoundingClientRect(), y = (ev.clientY - r.top) / Math.max(r.height, 1);
+    return y < 0.28 ? 'before' : (y > 0.72 ? 'after' : 'child');
+  }
+  function clearDrop() { $$('.mb-item').forEach(function (n) { n.classList.remove('drop-before', 'drop-after', 'drop-child'); }); }
+
+  // ---- left column --------------------------------------------------------
+  // Fill the Pages/Posts checkbox list in the left column, applying the search filter.
+  function fillList(kind) {
+    var box = $('[data-list="' + kind + '"]'), q = ($('[data-box="' + kind + '"] .mb-filter').value || '').toLowerCase();
+    box.innerHTML = '';
+    D[kind].forEach(function (o) {
+      if (q && (o.title + ' ' + o.path).toLowerCase().indexOf(q) < 0) return;
+      var cb = h('input', {type: 'checkbox', value: o.id});
+      var lab = h('label', {}, [cb, document.createTextNode(' ' + o.title + ' '), h('small', {text: o.path + (o.published ? '' : ' (draft)')})]);
+      box.appendChild(lab);
+    });
+    if (!box.children.length) box.appendChild(h('small', {text: 'No results.'}));
+  }
+  ['pages', 'posts'].forEach(function (k) {
+    fillList(k);
+    $('[data-box="' + k + '"] .mb-filter').addEventListener('input', function () { fillList(k); });
+  });
+  $$('.mb-box > h3').forEach(function (h3) { h3.addEventListener('click', function () { h3.parentNode.classList.toggle('collapsed'); }); });
+
+  $$('.mb-add-objects').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var kind = b.dataset.kind, type = kind === 'pages' ? 'page' : 'post';
+      $$('[data-list="' + kind + '"] input:checked').forEach(function (cb) {
+        var o = D[kind].find(function (x) { return String(x.id) === cb.value; });
+        if (!o) return;
+        items.push(wrap({id: null, type: type, object_id: o.id, label: '', default_label: o.title, url: '', title_attr: '',
+          new_tab: false, css_classes: '', link_classes: '', element_id: '', rel: '', visibility: 'all', is_active: true,
+          depth: 0, missing: false}));
+        cb.checked = false; setDirty(true);
+      });
+      render();
+    });
+  });
+  $('#mb-add-custom').addEventListener('click', function () {
+    var url = $('#mb-c-url').value.trim(), label = $('#mb-c-label').value.trim();
+    if (!url || url === 'https://') { status('Enter a URL.', 'err'); return; }
+    if (!label) { status('Enter a title for the link.', 'err'); return; }
+    status('');
+    items.push(wrap({id: null, type: 'custom', object_id: null, label: label, default_label: '', url: url, title_attr: '',
+      new_tab: false, css_classes: '', link_classes: '', element_id: '', rel: '', visibility: 'all', is_active: true,
+      depth: 0, missing: false}));
+    $('#mb-c-url').value = 'https://'; $('#mb-c-label').value = '';
+    setDirty(true); render();
+  });
+
+  // ---- save ---------------------------------------------------------------
+  // Whitelist of fields sent to the server (client-only fields like uid/open/_li are NOT sent).
+  var FIELDS = ['id', 'type', 'object_id', 'label', 'url', 'title_attr', 'new_tab', 'css_classes', 'link_classes',
+                'element_id', 'rel', 'visibility', 'is_active', 'depth'];
+  // Save: POST all items; on success adopt the server's normalised list (new ids!) but keep which
+  // panels were open. Buttons are disabled while the request is in flight.
+  function save() {
+    status('');
+    var payload = items.map(function (it) { var o = {}; FIELDS.forEach(function (f) { o[f] = it[f]; }); return o; });
+    $$('#mb-save-top, #mb-save-bottom').forEach(function (b) { b.disabled = true; });
+    fetch(D.saveUrl, {method: 'POST', credentials: 'same-origin',
+      headers: {'Content-Type': 'application/json', 'X-CSRFToken': CSRF}, body: JSON.stringify({items: payload})})
+      .then(function (r) { return r.json().then(function (j) { return {ok: r.ok, j: j}; }); })
+      .then(function (res) {
+        if (!res.ok || !res.j.ok) { status(res.j.error || 'Error while saving.', 'err'); return; }
+        var openByIndex = items.map(function (x) { return x.open; });
+        items = res.j.items.map(function (x, i) { x.open = !!openByIndex[i]; return wrap(x); });
+        setDirty(false); status('Menu saved.', 'ok'); render();
+      })
+      .catch(function () { status('Network error - not saved.', 'err'); })
+      .then(function () { $$('#mb-save-top, #mb-save-bottom').forEach(function (b) { b.disabled = false; }); });
+  }
+  $('#mb-save-top').addEventListener('click', save);
+  $('#mb-save-bottom').addEventListener('click', save);
+  // Warn before leaving the page with unsaved changes.
+  window.addEventListener('beforeunload', function (e) { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
+
+  render();
+})();
+</script>
+{% endblock %}

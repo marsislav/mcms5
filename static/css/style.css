@@ -1,10 +1,10 @@
 /* ---------------------------------------------
 [Master Stylesheet]
 
-Template Name: Dento - Dentist & Medical Template
-Template Author: Colorlib
+Template Name: mCMS 5 - Django powered CMS bu Marsislav
+Template Author: Marsislav
 Version: 1.0.0
-Last Update: Dec 05, 2018
+Last Update: 12. 10. 2026
 
 ---------------------------------------------
 [Tables of CSS Content]
@@ -60,7 +60,7 @@ Last Update: Dec 05, 2018
 @import url(css/magnific-popup.css);
 @import url(css/font-awesome.min.css);
 @import url(css/style.css);*/
- {
+* {
   margin: 0;
   padding: 0; }
 

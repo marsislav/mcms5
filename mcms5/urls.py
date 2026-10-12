@@ -1,18 +1,23 @@
 """
-URL configuration for mcms5 project.
+mcms5.urls - ROOT URL configuration (``ROOT_URLCONF`` in settings.py).
 
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/6.1/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
+Order matters: Django uses the FIRST pattern that matches.
+
+====================  ==============================  ============================
+URL                   Handled by                      Notes
+====================  ==============================  ============================
+/admin/               django admin                    includes the menu builder
+/                     mcms5.views.homepage            fixed home page
+/about/               mcms5.views.about               fixed About page
+/posts/...            posts.urls                      blog list + detail
+/users/...            users.urls                      registration
+/ckeditor5/...        django_ckeditor_5.urls          image upload endpoint
+/media/...            static() helper                 uploaded files (DEBUG only)
+/<any/path>/          pages.urls -> page_detail       CMS pages; MUST BE LAST
+====================  ==============================  ============================
+
+The ``pages`` catch-all matches ANY path ending in ``/``, so every new fixed URL
+must be added ABOVE it.
 """
 from django.contrib import admin
 from django.urls import path, include
@@ -30,4 +35,7 @@ urlpatterns = [
     path('', include('pages.urls')),  # catch-all for CMS pages - keep LAST
 ]
 
-urlpatterns+= static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Serve user-uploaded files (MEDIA_URL -> MEDIA_ROOT). Django only does this
+# when DEBUG=True; in production the web server (nginx/Apache) must serve
+# /media/ itself.
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
