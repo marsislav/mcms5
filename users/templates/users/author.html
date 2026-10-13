@@ -1,0 +1,44 @@
+{% extends "layout.html" %}
+{% load site_tags %}
+{# NOTE: {% extends %} must be the first tag, so the documentation comment follows it. #}
+{% comment %}
+users/author.html - public page of an author (users.views.author_page at /users/author/<username>/).
+Context: author (User), profile (Profile), page_obj (page of the author's posts, newest first).
+{% endcomment %}
+{% block title %}{{ profile.name }}{% endblock %}
+
+{% block content %}
+<div class="author-box author-box-page">
+  <div class="author-avatar">
+    {% if profile.avatar %}<img src="{{ profile.avatar.url }}" alt="{{ profile.name }}">{% else %}<span class="author-initial">{{ profile.initial }}</span>{% endif %}
+  </div>
+  <div class="author-info">
+    <h1 class="author-name">{{ profile.name }}</h1>
+    {% if profile.location %}<div class="author-location"><i class="fa fa-map-marker"></i> {{ profile.location }}</div>{% endif %}
+    {% if profile.bio %}<p class="author-bio">{{ profile.bio|linebreaksbr }}</p>{% endif %}
+    <p class="author-links">
+      {% if profile.website %}<a href="{{ profile.website }}" rel="nofollow noopener ugc" target="_blank"><i class="fa fa-globe"></i> Website</a>{% endif %}
+      {% if request.user == author %}<a href="{% url 'users:profile' %}"><i class="fa fa-pencil"></i> Edit my profile</a>{% endif %}
+    </p>
+  </div>
+</div>
+
+<h4 class="mt-50">Posts by {{ profile.name }}</h4>
+{% for post in page_obj %}
+  <h2><a href="{{ post.get_absolute_url }}">{{ post.title }}</a></h2>
+  <p>{{ post.body|striptags|truncatewords:40 }}</p>
+  <div class="post-meta"><i class="fa fa-clock-o"></i> {{ post.date|site_datetime }}</div>
+{% empty %}
+  <p>No posts yet.</p>
+{% endfor %}
+
+{% if page_obj.has_other_pages %}
+<nav aria-label="Pages" class="mt-30">
+  <ul class="pagination">
+    {% if page_obj.has_previous %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">&laquo; Newer</a></li>{% endif %}
+    <li class="page-item disabled"><span class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span></li>
+    {% if page_obj.has_next %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Older &raquo;</a></li>{% endif %}
+  </ul>
+</nav>
+{% endif %}
+{% endblock %}

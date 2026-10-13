@@ -1,12 +1,12 @@
 {% extends "post-details.html" %}
-{% load site_tags comments_tags %}
+{% load site_tags comments_tags users_tags %}
 {# NOTE: {% extends %} must be the first tag, so the documentation comment follows it. #}
 {% comment %}
 posts/post_page.html - a single blog post (served by posts.views.post_page).
 
 Context
 -------
-post         the Post instance
+post         the Post instance (``post.author`` -> byline + {% author_box post %} after the body)
 related_posts list of related Post objects (hand-picked, else same category), may be empty
 page_title / breadcrumbs   used by layout.html (hero heading + breadcrumb bar)
 
@@ -18,9 +18,12 @@ page_title / breadcrumbs   used by layout.html (hero heading + breadcrumb bar)
 {% block content %}
 <h1>{{ post.title }}</h1>
 <img src="{{ post.banner.url }}" alt="{{ post.title }}"/>
-<p><small>{{ post.date|site_datetime }}</small></p>
+<p><small>{{ post.date|site_datetime }}</small>
+{% if site.show_author_box and post.author %}<small class="post-byline"> &middot; by <a href="{% url 'users:author' username=post.author.username %}">{{ post.author|author_name }}</a></small>{% endif %}</p>
 {% include "posts/_post_categories.html" %}
 <div class="post-body">{{ post.body|safe }}</div>
+{# Author box: photo, name, short description, link to all posts of the author (Settings -> Users). #}
+{% author_box post %}
 {% if related_posts %}
 <div class="related-posts mt-50">
     <h4>Related posts</h4>

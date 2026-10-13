@@ -3,7 +3,9 @@ users.views - registration, login/logout and "forgot password".
 
 URL map (``users/urls.py``, mounted at ``/users/``):
 
-    register/                       register_view
+    register/                       register_view    (e-mails the admin about the new user, if enabled)
+    profile/                        profile_edit     (logged in: name, photo, short description...)
+    author/<username>/              author_page      (public: profile + all posts of that author)
     login/                          LoginView        (supports ?next=..., safe against open redirects)
     logout/                         LogoutView       (POST only - the "Logout" button is a small form)
     password-reset/                 ResetView        -> e-mail with a one-time link
@@ -14,13 +16,22 @@ URL map (``users/urls.py``, mounted at ``/users/``):
 Django's own auth views do the real work (hashing, tokens, expiry, CSRF). Reset links expire after
 ``PASSWORD_RESET_TIMEOUT`` (3 days by default) and work once. E-mail delivery: see docs/accounts.md.
 """
+from django.contrib.auth import get_user_model
 from django.contrib.auth import views as auth_views
-from django.shortcuts import redirect, render
-from django.urls import reverse_lazy
+from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
+from django.http import Http404
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse, reverse_lazy
 
+from posts.models import Post
+from siteconfig.mail import notify_admin
 from siteconfig.models import SiteSettings
 
-from .forms import LoginForm, NewPasswordForm, RegisterForm, ResetRequestForm
+from .forms import LoginForm, NewPasswordForm, ProfileForm, RegisterForm, ResetRequestForm
+from .models import Profile
+
+POSTS_PER_PAGE = 10
 
 
 def register_view(request):
@@ -34,12 +45,54 @@ def register_view(request):
     if request.method == 'POST':
         form = RegisterForm(request.POST)
         if form.is_valid():
-            form.save()
+            user = form.save()
+            if SiteSettings.load().users_email_admin:
+                notify_admin('New user registered',
+                             'A new user registered on the site.\n\nUsername: %s\nE-mail: %s\n\nUsers: %s' % (
+                                 user.get_username(), user.email,
+                                 request.build_absolute_uri(reverse('admin:auth_user_changelist'))))
             return redirect('%s?registered=1' % reverse_lazy('users:login'))
     else:
         form = RegisterForm()
     return render(request, 'users/register.html', {'form': form, 'page_title': 'Register',
                                                    'breadcrumbs': [('Register', '')]})
+
+
+@login_required
+def profile_edit(request):
+    """"My profile": the logged-in user edits the info shown with their posts.
+
+    Template ``users/profile.html``. After saving the page reloads with ``?saved=1`` (a notice).
+    """
+    profile = Profile.for_user(request.user)
+    if request.method == 'POST':
+        form = ProfileForm(request.POST, request.FILES, instance=profile)
+        if form.is_valid():
+            form.save()
+            return redirect('%s?saved=1' % reverse('users:profile'))
+    else:
+        form = ProfileForm(instance=profile)
+    return render(request, 'users/profile.html', {
+        'form': form, 'profile': profile, 'saved': request.GET.get('saved') == '1',
+        'post_count': Post.objects.filter(author=request.user).count(),
+        'page_title': 'My profile', 'breadcrumbs': [('My profile', '')]})
+
+
+def author_page(request, username):
+    """Public page of an author: the profile and all (not trashed) posts of the user, newest first.
+
+    Only users who have at least one post are public (a user who never wrote anything is not listed);
+    users can always open their own page. Unknown/inactive user -> 404. Template ``users/author.html``.
+    """
+    user = get_object_or_404(get_user_model(), username=username, is_active=True)
+    posts = Post.objects.filter(author=user).order_by('-date')
+    if not posts.exists() and request.user != user:
+        raise Http404('No posts by this user.')
+    page = Paginator(posts, POSTS_PER_PAGE).get_page(request.GET.get('page'))
+    profile = Profile.of(user)
+    return render(request, 'users/author.html', {
+        'author': user, 'profile': profile, 'page_obj': page,
+        'page_title': profile.name, 'breadcrumbs': [('Blog', reverse('posts:list')), (profile.name, '')]})
 
 
 class LoginView(auth_views.LoginView):

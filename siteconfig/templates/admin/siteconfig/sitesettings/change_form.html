@@ -8,6 +8,7 @@ How it works (no external libraries):
   * a tab containing a validation error is opened automatically and marked red
   * with only one section the tab bar still shows it (ready for more sections)
   * date/time "Custom..." inputs are shown only when "Custom..." is selected
+  * E-mail: the SMTP host/port/security/user/password rows are shown only for "SMTP server"
   * Discussion: reply depth is hidden when replies are off; all other comment options are dimmed
     when comments are disabled
 {% endcomment %}
@@ -78,6 +79,17 @@ How it works (no external libraries):
   }
   [enabled, threaded].forEach(function (el) { if (el) el.addEventListener('change', syncDiscussion); });
   syncDiscussion();
+
+  // ---- E-mail: SMTP inputs only for the "SMTP server" method -----------------
+  var mode = document.getElementById('id_email_mode');
+  var smtpRows = ['host', 'port', 'security', 'user', 'password'].map(function (n) {
+    return document.querySelector('.field-email_' + n);
+  }).filter(Boolean);
+  function syncEmail() {
+    if (!mode) return;
+    smtpRows.forEach(function (r) { r.style.display = mode.value === 'smtp' ? '' : 'none'; });
+  }
+  if (mode) { mode.addEventListener('change', syncEmail); syncEmail(); }
 })();
 </script>
 {% endblock %}

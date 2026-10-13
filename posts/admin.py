@@ -5,6 +5,7 @@ posts.admin - ``Post`` in the Django admin.
   editable. If it is left EMPTY on save the server builds it from the title and makes it
   unique (``PostAdminForm``, ``mcms5/slugs.py``).
 * Deleting moves to the Trash ("Trash: Posts"/"Trash: Categories"), see ``mcms5/softdelete.py``.
+* A new post gets the logged-in user as ``author`` when the author field is left empty.
 * The editor toolbar gets the "Columns" dropdown (docs/editor-columns.md).
 """
 from django import forms
@@ -70,10 +71,19 @@ class CategoryAdmin(SoftDeleteAdminMixin, admin.ModelAdmin):
 @admin.register(Post)
 class PostAdmin(SoftDeleteAdminMixin, admin.ModelAdmin):
     form = PostAdminForm
-    list_display = ('title', 'date')
-    list_filter = (('categories', AliveRelatedFieldListFilter),)
+    list_display = ('title', 'author', 'date')
+    list_filter = (('categories', AliveRelatedFieldListFilter), 'author')
     search_fields = ('title',)
     filter_horizontal = ('categories', 'related')
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('author')
+
+    def save_model(self, request, obj, form, change):
+        """New post without an author -> the user who creates it."""
+        if not change and obj.author_id is None:
+            obj.author = request.user
+        super().save_model(request, obj, form, change)
 
     class Media:
         js = ('js/admin-slug.js', 'js/ckeditor-columns.js')

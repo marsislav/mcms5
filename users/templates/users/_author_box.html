@@ -1,0 +1,21 @@
+{% comment %}
+users/_author_box.html - the author box after a post. Rendered by {% author_box post %} (users_tags).
+Context: author (User or None), profile (Profile), post_count (number of live posts of the author).
+Everything is auto-escaped; the bio is plain text (line breaks kept). The e-mail is never shown.
+{% endcomment %}
+{% if author %}
+<aside class="author-box">
+  <a class="author-avatar" href="{{ profile.get_absolute_url }}" aria-hidden="true" tabindex="-1">
+    {% if profile.avatar %}<img src="{{ profile.avatar.url }}" alt="">{% else %}<span class="author-initial">{{ profile.initial }}</span>{% endif %}
+  </a>
+  <div class="author-info">
+    <h5 class="author-name"><a href="{{ profile.get_absolute_url }}">{{ profile.name }}</a></h5>
+    {% if profile.location %}<div class="author-location"><i class="fa fa-map-marker"></i> {{ profile.location }}</div>{% endif %}
+    {% if profile.bio %}<p class="author-bio">{{ profile.bio|linebreaksbr }}</p>{% endif %}
+    <p class="author-links">
+      <a href="{{ profile.get_absolute_url }}">All posts by {{ profile.name }} ({{ post_count }})</a>
+      {% if profile.website %}<a href="{{ profile.website }}" rel="nofollow noopener ugc" target="_blank"><i class="fa fa-globe"></i> Website</a>{% endif %}
+    </p>
+  </div>
+</aside>
+{% endif %}

@@ -88,6 +88,7 @@ Replace these with real data/blocks as the site grows.
     <link rel="stylesheet" href="{% static 'css/font-awesome.min.css' %}">
     <link rel="stylesheet" href="{% static 'css/style.oth.css' %}">
     <link rel="stylesheet" href="{% static 'css/mcms-comments.css' %}">{# comments block, see docs/comments.md #}
+    <link rel="stylesheet" href="{% static 'css/mcms-users.css' %}">{# author box + byline, see docs/accounts.md #}
     <link rel="stylesheet" href="{% static 'css/mcms-columns.css' %}">{# responsive editor columns, see docs/editor-columns.md #}
 
 </head>
@@ -119,7 +120,7 @@ Replace these with real data/blocks as the site grows.
               {# Account links (users app): Login/Register or the user name + Logout (POST form, CSRF-protected). #}
               <span class="top-header-account">
                 {% if user.is_authenticated %}
-                  <span>{{ user.get_username }}</span>
+                  <a href="{% url 'users:profile' %}" class="top-header-profile" title="My profile">{{ user.get_username }}</a>
                   <form method="post" action="{% url 'users:logout' %}" class="d-inline">{% csrf_token %}<button type="submit" class="link-button">Logout</button></form>
                 {% else %}
                   <a href="{% url 'users:login' %}">Login</a>

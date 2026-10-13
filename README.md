@@ -21,7 +21,8 @@ HTML theme (Bootstrap based) adapted into Django templates.
 | [docs/slugs.md](docs/slugs.md) | slug auto-fill from the title (Bulgarian transliteration), editing, uniqueness |
 | [docs/search.md](docs/search.md) | the site **search** (`/search/`): what is searched, ranking, Cyrillic/SQLite note, files |
 | [docs/editor-columns.md](docs/editor-columns.md) | the editor **Columns** dropdown (1–6, 12 responsive columns): usage, HTML, breakpoints, files |
-| [docs/settings.md](docs/settings.md) | the admin **Settings** pane (site title, logo, favicon, e-mail, location, date/time formats): options, template/Python usage, adding sections |
+| [docs/accounts.md](docs/accounts.md) | registration, login, forgot password, **user profiles** (photo, description), post **authors** and author pages, e-mail delivery |
+| [docs/settings.md](docs/settings.md) | the admin **Settings** pane (site title, logo, favicon, e-mail, location, date/time formats, **sending e-mail / local SMTP**, users): options, template/Python usage, adding sections |
 | [docs/deployment.md](docs/deployment.md) | settings to change for production, static/media serving, checklist |
 
 ## Quick start

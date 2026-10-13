@@ -1,0 +1,20 @@
+{% extends "layout.html" %}
+{# NOTE: {% extends %} must be the first tag, so the documentation comment follows it. #}
+{% comment %}
+users/profile.html - "My profile" (users.views.profile_edit at /users/profile/, login required).
+Context: form (ProfileForm), profile, saved (True right after saving), post_count (posts of this user).
+{% endcomment %}
+{% block title %}My profile{% endblock %}
+
+{% block content %}
+<h1>My profile</h1>
+{% if saved %}<div class="alert alert-success">Profile saved.</div>{% endif %}
+<p class="text-muted">This information is shown after the posts you are the author of
+  (<strong>{{ user.get_username }}</strong>, e-mail is never shown).
+  {% if post_count %}<a href="{{ profile.get_absolute_url }}">View my public page ({{ post_count }} post{{ post_count|pluralize }})</a>{% endif %}</p>
+<form method="post" action="{% url 'users:profile' %}" enctype="multipart/form-data">
+  {% csrf_token %}
+  {% include "users/_form.html" %}
+  <button type="submit" class="btn mcms-btn">Save</button>
+</form>
+{% endblock %}

@@ -219,7 +219,8 @@ class AdminTests(Base):
         s = SiteSettings.load()
         data = dict(site_title='S', date_format='d.m.Y', time_format='H:i', _save='Save',
                     comments_moderation='auto', comments_threaded='on', comments_max_depth=4,
-                    comments_close_after_days=10, comments_max_links=1)   # comments_enabled unchecked
+                    comments_close_after_days=10, comments_max_links=1,   # comments_enabled unchecked
+                    email_mode='default', email_host='localhost', email_port=25, email_security='none')
         self.assertEqual(self.client.post(url, data).status_code, 302)
         s = SiteSettings.load()
         self.assertFalse(s.comments_enabled)

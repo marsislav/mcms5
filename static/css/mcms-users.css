@@ -1,0 +1,18 @@
+/* Author box, author page and "by <author>" line (users app, see docs/accounts.md). */
+.author-box { display: flex; gap: 18px; align-items: flex-start; margin: 40px 0 10px; padding: 20px;
+  background: #f7f8fa; border: 1px solid #e6e8ec; border-radius: 6px; }
+.author-box-page { margin-top: 0; }
+.author-avatar { flex: 0 0 auto; width: 88px; height: 88px; border-radius: 50%; overflow: hidden;
+  background: #cfd6dd; display: flex; align-items: center; justify-content: center; text-decoration: none; }
+.author-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.author-initial { font-size: 38px; font-weight: 600; color: #fff; line-height: 1; }
+.author-info { min-width: 0; flex: 1 1 auto; }
+.author-name { margin: 0 0 4px; font-size: 20px; }
+h1.author-name { font-size: 28px; }
+.author-location { font-size: 13px; color: #777; margin-bottom: 6px; }
+.author-bio { margin: 6px 0; overflow-wrap: anywhere; }
+.author-links { margin: 8px 0 0; font-size: 14px; }
+.author-links a { margin-right: 16px; }
+.post-byline { font-size: 14px; }
+.top-header-account .top-header-profile { text-decoration: underline; }
+@media (max-width: 480px) { .author-box { flex-direction: column; } }

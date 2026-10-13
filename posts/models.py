@@ -18,6 +18,7 @@ Depends on
 * ``media/fallback.png`` must exist: it is the default banner. If you delete
   that file, posts without their own banner will render a broken image.
 """
+from django.conf import settings
 from django.db import models
 from django.urls import reverse
 from django_ckeditor_5.fields import CKEditor5Field
@@ -58,6 +59,10 @@ class Post(SoftDeleteModel):
             it cannot be edited in the admin. Used for list ordering.
     banner  Image stored under ``MEDIA_ROOT``; defaults to ``fallback.png``.
     categories  Zero or more ``Category`` objects.
+    author  The user shown as the author (name under the title + author box after the post, see
+            ``users`` app). Filled with the logged-in admin user when a post is created in the admin;
+            posts without an author show no author info. Deleting the user keeps the post
+            (``SET_NULL``). ``user.posts`` also lists Trash items - use ``Post.objects.filter(author=user)``.
     comments_open  Per-post switch for comments (the global switch is Settings -> Discussion).
     related     Hand-picked related posts. Symmetrical: linking A to B also links B to A.
     """
@@ -68,6 +73,9 @@ class Post(SoftDeleteModel):
     date = models.DateTimeField(auto_now_add=True)
     banner = models.ImageField(default='fallback.png', blank=True)
     categories = models.ManyToManyField(Category, blank=True, related_name='posts')
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='posts',
+        help_text='Shown as the author of the post. Filled with you when you create a post.')
     related = models.ManyToManyField('self', blank=True, symmetrical=True)
     comments_open = models.BooleanField(
         'Allow comments', default=True,

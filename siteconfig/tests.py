@@ -39,7 +39,8 @@ class SiteSettingsTests(TestCase):
                     location='Plovdiv', date_format='d.m.Y', date_format_custom='',
                     time_format='H:i', time_format_custom='', _save='Save',
                     comments_enabled='on', comments_moderation='manual', comments_threaded='on',
-                    comments_max_depth=3, comments_close_after_days=0, comments_max_links=2)
+                    comments_max_depth=3, comments_close_after_days=0, comments_max_links=2,
+                    email_mode='default', email_host='localhost', email_port=25, email_security='none')
         data.update(over)
         return data
 

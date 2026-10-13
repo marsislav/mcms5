@@ -37,7 +37,7 @@
 | `posts` | blog posts | `Post` | `django_ckeditor_5` |
 | `comments` | visitor comments + replies on posts, moderation (see [comments.md](comments.md)) | `Comment` | `posts`, `siteconfig` |
 | `menus` | navigation menus + admin builder | `Menu`, `MenuItem` | `pages`, `posts` |
-| `users` | registration, login/logout, forgot password (see [accounts.md](accounts.md)) | - (uses `auth.User`) | `django.contrib.auth` |
+| `users` | registration, login/logout, forgot password, **profiles** (photo, description) and public **author pages** (see [accounts.md](accounts.md)) | `Profile` (one per `auth.User`) | `django.contrib.auth`, `posts`, `siteconfig` |
 | `search` | public site search `/search/` (pages + posts), Unicode-aware on SQLite (see [search.md](search.md)) | - | `pages`, `posts` |
 | `siteconfig` | admin **Settings** pane: site title/description, logo, favicon, e-mail, location, date/time formats (see [settings.md](settings.md)) | `SiteSettings` (singleton) | - |
 
@@ -137,7 +137,9 @@ Legend: **Uses** = what it needs; **Used by** = who needs it.
 
 ### App `users/`
 
-`views.py` (registration), `urls.py`, `templates/users/register.html`. `models.py`, `admin.py`, `tests.py` are intentionally empty.
+`views.py` (registration, `profile_edit`, `author_page`, auth views), `urls.py`, `models.py` (`Profile`), `signals.py`, `forms.py`,
+`admin.py` (profile inline), `templatetags/users_tags.py` (`author_box`, `author_name`), `templates/users/*.html`,
+`migrations/` (`0002` creates profiles for existing users), `tests.py` + `test_profiles.py`.
 
 ### Shared `templates/`
 

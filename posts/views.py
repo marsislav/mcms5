@@ -32,7 +32,7 @@ def _with_comment_count(qs):
 
 def get_post_or_404(**lookup):
     """A post that is not in the Trash, with its live categories prefetched."""
-    return get_object_or_404(Post.objects.prefetch_related(_live_categories()), **lookup)
+    return get_object_or_404(Post.objects.select_related('author__profile').prefetch_related(_live_categories()), **lookup)
 
 
 def render_post(request, post, extra=None, status=200):
@@ -55,7 +55,8 @@ def posts_list(request):
     Template: ``posts/templates/posts/posts_list.html``.
     Breadcrumbs: Home > Blog.
     """
-    posts = _with_comment_count(Post.objects.prefetch_related(_live_categories())).order_by('date')
+    posts = _with_comment_count(
+        Post.objects.select_related('author__profile').prefetch_related(_live_categories())).order_by('date')
     return render(request, 'posts/posts_list.html', {
         'posts': posts,
         'page_title': 'Blog',
@@ -70,7 +71,8 @@ def category_posts(request, slug):
     """
     category = get_object_or_404(Category.objects, slug=slug)
     return render(request, 'posts/posts_list.html', {
-        'posts': _with_comment_count(category.posts.alive().prefetch_related(_live_categories())).order_by('date'),
+        'posts': _with_comment_count(
+            category.posts.alive().select_related('author__profile').prefetch_related(_live_categories())).order_by('date'),
         'category': category,
         'page_title': category.name,
         'breadcrumbs': [('Blog', reverse('posts:list')), (category.name, '')],

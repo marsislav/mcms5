@@ -18,11 +18,14 @@ In templates use the ``site`` variable from the context processor
 Sections
 --------
 The admin form is split into SECTIONS (tabs). Each section is one
-``fieldsets`` entry in ``siteconfig/admin.py``. Currently there are two:
+``fieldsets`` entry in ``siteconfig/admin.py``. Currently there are four:
 
   General     site title, description, favicon, admin e-mail, location,
               date format, time format, logo
   Discussion  comments on/off, approval mode, replies, spam rules (comments app)
+  Users       e-mail the admin about new registrations, show the post author (users app)
+  E-mail      how the site SENDS mail: server default / console / files / SMTP (local or remote),
+              From address, "send a test e-mail" (see ``siteconfig/mail.py``)
 
 To add a section (e.g. "SEO"): add the fields below + a migration, then add a
 fieldset to ``SiteSettingsAdmin.fieldsets``. See ``docs/settings.md``.
@@ -74,6 +77,26 @@ COMMENT_MODERATION_CHOICES = [
     (MODERATION_RETURNING, 'Automatic for returning commenters - only the first comment of an e-mail waits for approval'),
 ]
 
+# E-mail -> how outgoing mail is delivered (see siteconfig/mail.py::SiteEmailBackend).
+EMAIL_MODE_DEFAULT = 'default'
+EMAIL_MODE_CONSOLE = 'console'
+EMAIL_MODE_FILE = 'file'
+EMAIL_MODE_SMTP = 'smtp'
+EMAIL_MODE_CHOICES = [
+    (EMAIL_MODE_DEFAULT, 'Server default (settings.py / environment variables)'),
+    (EMAIL_MODE_CONSOLE, 'Print in the server console (development, nothing is sent)'),
+    (EMAIL_MODE_FILE, 'Save as .eml files in the "sent_emails" folder (development, nothing is sent)'),
+    (EMAIL_MODE_SMTP, 'SMTP server (this computer\'s local mail server, or any other)'),
+]
+EMAIL_SECURITY_NONE = 'none'
+EMAIL_SECURITY_STARTTLS = 'starttls'
+EMAIL_SECURITY_SSL = 'ssl'
+EMAIL_SECURITY_CHOICES = [
+    (EMAIL_SECURITY_NONE, 'None (typical for a local server, port 25 / 1025)'),
+    (EMAIL_SECURITY_STARTTLS, 'STARTTLS (usually port 587)'),
+    (EMAIL_SECURITY_SSL, 'SSL/TLS (usually port 465)'),
+]
+
 # Max upload sizes (bytes) - validated in the form (``clean_*`` below).
 MAX_LOGO_SIZE = 2 * 1024 * 1024      # 2 MB
 MAX_FAVICON_SIZE = 512 * 1024        # 512 KB
@@ -121,8 +144,9 @@ class SiteSettings(models.Model):
                   '(max 512 KB). Recommended: square PNG/ICO, at least 32x32 px.')
     admin_email = models.EmailField(
         'Admin e-mail', blank=True,
-        help_text='Main contact / administrator e-mail address of the site. Shown in the page header '
-                  'and footer, and the address system notifications should be sent to.')
+        help_text='Administrator e-mail address. Shown in the page header and footer, and ALL system '
+                  'notifications are sent to it (new comments, new registrations, the test e-mail). '
+                  'Sending itself is configured in the "E-mail" section.')
     location = models.CharField(
         'Location', max_length=255, blank=True,
         help_text='Physical address or place, e.g. "Str 28, Plovdiv, 4000, Bulgaria". '
@@ -182,6 +206,42 @@ class SiteSettings(models.Model):
         'E-mail me about new comments', default=False,
         help_text='Send a message to the Admin e-mail (General section) when a comment is posted or waits for approval. '
                   'Needs working e-mail settings on the server.')
+
+    # -------------------------------------------------------------------- Users
+    users_email_admin = models.BooleanField(
+        'E-mail me about new registrations', default=True,
+        help_text='Send a message to the Admin e-mail (General section) when someone registers. '
+                  'Needs working e-mail settings (E-mail section).')
+    show_author_box = models.BooleanField(
+        'Show the post author', default=True,
+        help_text='Show "by <author>" under the post title and the author box (photo, short description, '
+                  'link to all posts of the author) after every post that has an author.')
+
+    # ------------------------------------------------------------------- E-mail
+    email_mode = models.CharField(
+        'Sending method', max_length=10, choices=EMAIL_MODE_CHOICES, default=EMAIL_MODE_DEFAULT,
+        help_text='"Server default" keeps whatever settings.py / the environment says (the console, unless '
+                  'DJANGO_EMAIL_BACKEND is set). For a local server pick "SMTP server" and use host '
+                  '"localhost" (or "127.0.0.1").')
+    email_host = models.CharField(
+        'SMTP host', max_length=255, blank=True, default='localhost',
+        help_text='Local mail server: localhost. Remote: e.g. smtp.example.com.')
+    email_port = models.PositiveIntegerField(
+        'SMTP port', default=25, validators=[MinValueValidator(1), MaxValueValidator(65535)],
+        help_text='25 = local Postfix/Exim; 1025 = Mailpit/MailHog (local test inbox); 587 = STARTTLS; 465 = SSL.')
+    email_security = models.CharField(
+        'Connection security', max_length=10, choices=EMAIL_SECURITY_CHOICES, default=EMAIL_SECURITY_NONE)
+    email_user = models.CharField(
+        'SMTP user', max_length=255, blank=True,
+        help_text='Leave empty if the server needs no login (typical for a local server).')
+    email_password = models.CharField(
+        'SMTP password', max_length=255, blank=True,
+        help_text='Stored in the database as plain text (it must be readable to log in). Leave the field empty '
+                  'to keep the saved password.')
+    email_from = models.EmailField(
+        '"From" address', blank=True,
+        help_text='Sender of the messages the site sends (e.g. no-reply@yourdomain). Empty = '
+                  'DEFAULT_FROM_EMAIL from settings.py. Many servers only accept addresses of their own domain.')
 
     class Meta:
         verbose_name = 'Settings'

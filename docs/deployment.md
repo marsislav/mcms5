@@ -29,3 +29,10 @@ Pull the new code and run `python manage.py migrate`. Migrations
 `menus.0003_english_labels` and `posts.0004_english_labels` only change labels;
 `menus.0003` also renames the default Bulgarian menu names ("Главно меню",
 "Начало") to English if they were never customised. No data is lost.
+
+## After upgrading to profiles / e-mail settings
+
+* Run `python manage.py migrate` (adds `Post.author`, the profiles table and the new settings columns).
+* Existing posts get the first superuser as author (migration `posts/0009`); change it in admin -> Posts if needed.
+* Profile photos are uploads in `media/avatars/` - the web server must serve `/media/` (see above).
+* Configure sending in admin -> Settings -> E-mail and press "Send a test e-mail after saving".

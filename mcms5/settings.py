@@ -180,7 +180,13 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 #   EMAIL_HOST=smtp.example.com  EMAIL_PORT=587  EMAIL_USE_TLS=1
 #   EMAIL_HOST_USER=...  EMAIL_HOST_PASSWORD=...  DEFAULT_FROM_EMAIL="My Site <no-reply@example.com>"
 # See docs/accounts.md.
-EMAIL_BACKEND = os.environ.get('DJANGO_EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
+# The project backend reads admin -> Settings -> E-mail on every send (siteconfig/mail.py). With the
+# method "Server default" it uses EMAIL_FALLBACK_BACKEND = the old EMAIL_BACKEND behaviour (env
+# DJANGO_EMAIL_BACKEND, else the console) together with the EMAIL_* values below.
+EMAIL_BACKEND = 'siteconfig.mail.SiteEmailBackend'
+EMAIL_FALLBACK_BACKEND = os.environ.get('DJANGO_EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
+# Folder for the Settings -> E-mail method "Save as .eml files" (development).
+EMAIL_FILE_PATH = os.path.join(BASE_DIR, 'sent_emails')
 EMAIL_HOST = os.environ.get('EMAIL_HOST', 'localhost')
 EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '25'))
 EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', '') == '1'

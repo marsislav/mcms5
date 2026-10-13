@@ -50,6 +50,9 @@ that slug **and** the previous page as parent; any miss -> 404.
 | `slug` | unique; URL is `/posts/category/<slug>` (auto-filled from the name in the admin) |
 
 * Sidebar box "Categories" (`{% categories_widget %}`) lists only categories that have posts, with counts.
+* **Author**: `Post.author` (a user, optional). Filled with the logged-in user when a post is created in the admin; can be
+  changed there (also a list column and filter). Shows the byline and the author box ([accounts.md](accounts.md)).
+  Use `Post.objects.filter(author=user)` (not `user.posts`, which also lists Trash items).
 * Post page: "Related posts" shows the hand-picked ones; if none are picked it falls back to posts sharing a category (max 4, newest first) - `Post.related_posts()`.
 * Sidebar box "Recent Posts" (`{% recent_posts_widget 5 %}`) shows the newest posts; the number is the tag argument in `templates/layout.html`.
 * Template tags: `posts/templatetags/posts_tags.py`.
