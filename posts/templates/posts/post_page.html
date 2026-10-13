@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% load site_tags %}
+{% load site_tags comments_tags %}
 {# NOTE: {% extends %} must be the first tag, so the documentation comment follows it. #}
 {% comment %}
 posts/post_page.html - a single blog post (served by posts.views.post_page).
@@ -31,4 +31,6 @@ page_title / breadcrumbs   used by layout.html (hero heading + breadcrumb bar)
     </ul>
 </div>
 {% endif %}
+{# Comments + reply form (comments app; hidden when disabled in Settings -> Discussion). #}
+{% comments_section post %}
 {% endblock %}

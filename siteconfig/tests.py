@@ -37,7 +37,9 @@ class SiteSettingsTests(TestCase):
     def form(self, **over):
         data = dict(site_title='My Site', site_description='Desc', admin_email='me@x.bg',
                     location='Plovdiv', date_format='d.m.Y', date_format_custom='',
-                    time_format='H:i', time_format_custom='', _save='Save')
+                    time_format='H:i', time_format_custom='', _save='Save',
+                    comments_enabled='on', comments_moderation='manual', comments_threaded='on',
+                    comments_max_depth=3, comments_close_after_days=0, comments_max_links=2)
         data.update(over)
         return data
 

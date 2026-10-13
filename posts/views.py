@@ -13,7 +13,7 @@ page_title   text of the hero heading
 breadcrumbs  ``[(label, url), ...]`` - the trail AFTER "Home"; the last item is
              rendered as the current page (its url is ignored, so '' is fine).
 """
-from django.db.models import Prefetch
+from django.db.models import Count, Prefetch, Q
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 
@@ -25,6 +25,29 @@ def _live_categories():
     return Prefetch('categories', queryset=Category.objects.all())
 
 
+def _with_comment_count(qs):
+    """Annotate ``comment_count`` = number of APPROVED comments (shown in the list)."""
+    return qs.annotate(comment_count=Count('comments', filter=Q(comments__status='approved')))
+
+
+def get_post_or_404(**lookup):
+    """A post that is not in the Trash, with its live categories prefetched."""
+    return get_object_or_404(Post.objects.prefetch_related(_live_categories()), **lookup)
+
+
+def render_post(request, post, extra=None, status=200):
+    """Render the single-post page. ``extra`` adds/overrides context (the comment form uses it)."""
+    context = {
+        'post': post,
+        'related_posts': post.related_posts(),
+        'page_title': post.title,
+        # The last crumb is the current page, so it has no link target.
+        'breadcrumbs': [('Blog', reverse('posts:list')), (post.title, '')],
+    }
+    context.update(extra or {})
+    return render(request, 'posts/post_page.html', context, status=status)
+
+
 def posts_list(request):
     """List all posts, oldest first (``order_by('date')``).
 
@@ -32,7 +55,7 @@ def posts_list(request):
     Template: ``posts/templates/posts/posts_list.html``.
     Breadcrumbs: Home > Blog.
     """
-    posts = Post.objects.prefetch_related(_live_categories()).order_by('date')
+    posts = _with_comment_count(Post.objects.prefetch_related(_live_categories())).order_by('date')
     return render(request, 'posts/posts_list.html', {
         'posts': posts,
         'page_title': 'Blog',
@@ -47,7 +70,7 @@ def category_posts(request, slug):
     """
     category = get_object_or_404(Category.objects, slug=slug)
     return render(request, 'posts/posts_list.html', {
-        'posts': category.posts.alive().prefetch_related(_live_categories()).order_by('date'),
+        'posts': _with_comment_count(category.posts.alive().prefetch_related(_live_categories())).order_by('date'),
         'category': category,
         'page_title': category.name,
         'breadcrumbs': [('Blog', reverse('posts:list')), (category.name, '')],
@@ -60,11 +83,4 @@ def post_page(request, slug):
     Template: ``posts/templates/posts/post_page.html``.
     Breadcrumbs: Home > Blog > <post title>.
     """
-    post = get_object_or_404(Post.objects.prefetch_related(_live_categories()), slug=slug)
-    return render(request, 'posts/post_page.html', {
-        'post': post,
-        'related_posts': post.related_posts(),
-        'page_title': post.title,
-        # The last crumb is the current page, so it has no link target.
-        'breadcrumbs': [('Blog', reverse('posts:list')), (post.title, '')],
-    })
+    return render_post(request, get_post_or_404(slug=slug))

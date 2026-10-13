@@ -1,0 +1,11 @@
+{# Renders a form with Bootstrap markup. Needs: form. Hidden fields + non-field errors included. #}
+{% if form.non_field_errors %}<ul class="errorlist">{% for e in form.non_field_errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+{% for field in form.hidden_fields %}{{ field }}{% endfor %}
+{% for field in form.visible_fields %}
+<div class="form-group">
+  {{ field.label_tag }}
+  {{ field }}
+  {% if field.errors %}<ul class="errorlist">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+  {% if field.help_text %}<small class="text-muted">{{ field.help_text|safe }}</small>{% endif %}
+</div>
+{% endfor %}

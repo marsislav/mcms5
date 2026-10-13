@@ -1,0 +1,47 @@
+{% comment %}
+comments/_section.html - comments + reply form of a post (comments_tags.comments_section).
+Context: enabled, post, open, needs_login, nodes (tree), count, form, reply_to, csrf_token, commented.
+Everything user-supplied is auto-escaped; comment text goes through |urlize (adds rel="nofollow") and |linebreaks.
+{% endcomment %}
+{% if enabled %}
+<section id="comments" class="mcms-comments mt-50">
+  <h4>{{ count }} Comment{{ count|pluralize }}</h4>
+
+  {% if commented == 'approved' %}
+    <p class="comment-notice">Thank you! Your comment has been published.</p>
+  {% elif commented == 'pending' %}
+    <p class="comment-notice">Thank you! Your comment is awaiting moderation.</p>
+  {% endif %}
+
+  {% if nodes %}
+    <ol class="comment-list">
+      {% for node in nodes %}{% include "comments/_comment.html" %}{% endfor %}
+    </ol>
+  {% else %}
+    <p><small>No comments yet.</small></p>
+  {% endif %}
+
+  <div id="respond" class="comment-respond">
+    {% if not open %}
+      <p><em>Comments are closed.</em></p>
+    {% elif needs_login %}
+      <p>Please <a href="{% url 'users:login' %}?next={{ post.get_absolute_url|urlencode:'' }}%23respond">log in</a> to leave a comment.</p>
+    {% else %}
+      <h5>{% if reply_to %}Reply to {{ reply_to.author_name }} <small><a href="{{ post.get_absolute_url }}#respond">Cancel reply</a></small>{% else %}Leave a comment{% endif %}</h5>
+      <form method="post" action="{% url 'comments:submit' post_id=post.pk %}">
+        <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+        {% if form.non_field_errors %}<ul class="errorlist">{% for e in form.non_field_errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+        {% if user.is_authenticated %}<p><small>Commenting as <strong>{{ user.get_full_name|default:user.get_username }}</strong>.</small></p>{% endif %}
+        {% if form.author_name %}
+          <div class="form-group">{{ form.author_name.label_tag }} {{ form.author_name.errors }}<input type="text" name="author_name" maxlength="80" class="form-control" value="{{ form.author_name.value|default_if_none:'' }}"{% if form.author_name.field.required %} required{% endif %}></div>
+          <div class="form-group">{{ form.author_email.label_tag }} {{ form.author_email.errors }}<input type="email" name="author_email" class="form-control" value="{{ form.author_email.value|default_if_none:'' }}"{% if form.author_email.field.required %} required{% endif %}><small class="text-muted">Never published.</small></div>
+        {% endif %}
+        <div class="form-group">{{ form.body.label_tag }} {{ form.body.errors }}<textarea name="body" rows="5" maxlength="2000" class="form-control" required>{{ form.body.value|default_if_none:'' }}</textarea></div>
+        {% if form.parent %}<input type="hidden" name="parent" value="{{ form.parent.value|default_if_none:'' }}">{% endif %}
+        <div class="comment-hp" aria-hidden="true">{{ form.website.label_tag }} {{ form.website }}</div>
+        <button type="submit" class="btn mcms-btn">Post comment</button>
+      </form>
+    {% endif %}
+  </div>
+</section>
+{% endif %}

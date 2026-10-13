@@ -8,6 +8,8 @@ How it works (no external libraries):
   * a tab containing a validation error is opened automatically and marked red
   * with only one section the tab bar still shows it (ready for more sections)
   * date/time "Custom..." inputs are shown only when "Custom..." is selected
+  * Discussion: reply depth is hidden when replies are off; all other comment options are dimmed
+    when comments are disabled
 {% endcomment %}
 {% block extrahead %}{{ block.super }}
 <style>
@@ -62,6 +64,20 @@ How it works (no external libraries):
     var sync = function () { row.style.display = sel.value === 'custom' ? '' : 'none'; };
     sel.addEventListener('change', sync); sync();
   });
+
+  // ---- Discussion: dependent options ---------------------------------------
+  var enabled = document.getElementById('id_comments_enabled');
+  var threaded = document.getElementById('id_comments_threaded');
+  var depthRow = document.querySelector('.field-comments_max_depth');
+  var others = Array.prototype.slice.call(document.querySelectorAll('[class*="field-comments_"]'))
+    .filter(function (r) { return r.className.indexOf('field-comments_enabled') < 0; });
+  function syncDiscussion() {
+    if (!enabled) return;
+    others.forEach(function (r) { r.style.opacity = enabled.checked ? '' : '0.45'; });
+    if (depthRow && threaded) depthRow.style.display = threaded.checked ? '' : 'none';
+  }
+  [enabled, threaded].forEach(function (el) { if (el) el.addEventListener('change', syncDiscussion); });
+  syncDiscussion();
 })();
 </script>
 {% endblock %}

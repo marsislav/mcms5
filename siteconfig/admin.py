@@ -35,6 +35,18 @@ class SiteSettingsAdmin(admin.ModelAdmin):
                 'time_format', 'time_format_custom',
             ),
         }),
+        ('Discussion', {
+            'description': 'Comments on blog posts (the "comments" app).',
+            'fields': (
+                'comments_enabled',
+                'comments_moderation',
+                'comments_require_name_email', 'comments_registered_only',
+                'comments_threaded', 'comments_max_depth',
+                'comments_close_after_days',
+                'comments_max_links', 'comments_blocked_words',
+                'comments_email_admin',
+            ),
+        }),
     )
 
     def has_add_permission(self, request):

@@ -1,0 +1,12 @@
+{% load site_tags %}{# One comment + its replies (recursive). Needs: node, post. #}
+<li id="comment-{{ node.comment.pk }}" class="comment-item">
+  <div class="comment-head"><strong>{{ node.comment.author_name }}</strong>
+    <small class="text-muted">{{ node.comment.created|site_datetime }}</small></div>
+  <div class="comment-body">{{ node.comment.body|urlize|linebreaks }}</div>
+  {% if node.can_reply %}<a class="comment-reply" href="{{ post.get_absolute_url }}?replytocom={{ node.comment.pk }}#respond">Reply</a>{% endif %}
+  {% if node.children %}
+    <ol class="comment-list comment-children">
+      {% for node in node.children %}{% include "comments/_comment.html" %}{% endfor %}
+    </ol>
+  {% endif %}
+</li>

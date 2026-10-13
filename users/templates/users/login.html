@@ -1,15 +1,20 @@
 {% extends "layout.html" %}
- 
- 
+{# NOTE: {% extends %} must be the first tag, so the documentation comment follows it. #}
+{% comment %}
+users/login.html - log in (users.views.LoginView at /users/login/).
+Context: form (username + password), next (where to go after login), registered (True right after sign-up).
 {% endcomment %}
-{% block title %}User Login{% endblock %}
+{% block title %}Log in{% endblock %}
 
 {% block content %}
-<h1>User login</h1>
-<form action="/users/login/" method="post">
-  {# CSRF token is mandatory for POST forms (CsrfViewMiddleware). #}
+<h1>Log in</h1>
+{% if registered %}<p class="comment-notice">Account created. You can log in now.</p>{% endif %}
+<form method="post" action="{% url 'users:login' %}">
   {% csrf_token %}
-  {{ form }}
-  <button class="btn dento-btn">Submit</button>
+  <input type="hidden" name="next" value="{{ next }}">
+  {% include "users/_form.html" %}
+  <button type="submit" class="btn mcms-btn">Log in</button>
 </form>
+<p class="mt-30"><a href="{% url 'users:password_reset' %}">Forgot your password?</a><br>
+No account yet? <a href="{% url 'users:register' %}">Register</a></p>
 {% endblock %}

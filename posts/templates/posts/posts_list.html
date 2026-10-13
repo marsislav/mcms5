@@ -6,7 +6,7 @@ posts/posts_list.html - blog index (served by posts.views.posts_list).
 
 Context
 -------
-posts        queryset of Post, oldest first
+posts        queryset of Post, oldest first (each with ``comment_count`` = approved comments)
 category     (optional) the Category being browsed, set by posts.views.category_posts
 page_title / breadcrumbs   used by layout.html (hero heading + breadcrumb bar)
 
@@ -30,7 +30,7 @@ Each link uses {% url 'posts:page' slug=... %} -> /posts/<slug>
     {% include "posts/_post_categories.html" %}
     <div class="post-meta">
                 <a href="#"><i class="fa fa-clock-o"></i> {{ post.date|site_datetime }}</a>
-                <a href="#"><i class="fa fa-comment-o"></i> 3 Comments</a>
+                {% if site.comments_enabled and post.comments_open %}<a href="{{ post.get_absolute_url }}#comments"><i class="fa fa-comment-o"></i> {{ post.comment_count }} Comment{{ post.comment_count|pluralize }}</a>{% endif %}
               </div>
    
 {% empty %}

@@ -11,6 +11,7 @@ URL                   Handled by                      Notes
 /about/               mcms5.views.about               fixed About page
 /search/               search.urls                     site search (?q=...)
 /posts/...            posts.urls                      blog list + detail
+/comments/...         comments.urls                   new comment (POST)
 /users/...            users.urls                      registration
 /ckeditor5/...        django_ckeditor_5.urls          image upload endpoint
 /media/...            static() helper                 uploaded files (DEBUG only)
@@ -32,6 +33,7 @@ urlpatterns = [
     path('about/', views.about),
     path('search/', include('search.urls')),
     path('posts/', include('posts.urls')),
+    path('comments/', include('comments.urls')),
     path('users/', include('users.urls')),
     path('ckeditor5/', include('django_ckeditor_5.urls')),
     path('', include('pages.urls')),  # catch-all for CMS pages - keep LAST

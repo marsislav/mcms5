@@ -58,6 +58,7 @@ class Post(SoftDeleteModel):
             it cannot be edited in the admin. Used for list ordering.
     banner  Image stored under ``MEDIA_ROOT``; defaults to ``fallback.png``.
     categories  Zero or more ``Category`` objects.
+    comments_open  Per-post switch for comments (the global switch is Settings -> Discussion).
     related     Hand-picked related posts. Symmetrical: linking A to B also links B to A.
     """
 
@@ -68,6 +69,9 @@ class Post(SoftDeleteModel):
     banner = models.ImageField(default='fallback.png', blank=True)
     categories = models.ManyToManyField(Category, blank=True, related_name='posts')
     related = models.ManyToManyField('self', blank=True, symmetrical=True)
+    comments_open = models.BooleanField(
+        'Allow comments', default=True,
+        help_text='Turn off to close comments on this post (Settings -> Discussion must also be on).')
 
     def __str__(self):
         """Shown in the admin lists and in the menu builder."""

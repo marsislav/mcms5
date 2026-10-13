@@ -1,41 +1,102 @@
-"""users.views - public user registration."""
-from django.http import request
-from django.shortcuts import render, redirect
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+"""
+users.views - registration, login/logout and "forgot password".
+
+URL map (``users/urls.py``, mounted at ``/users/``):
+
+    register/                       register_view
+    login/                          LoginView        (supports ?next=..., safe against open redirects)
+    logout/                         LogoutView       (POST only - the "Logout" button is a small form)
+    password-reset/                 ResetView        -> e-mail with a one-time link
+    password-reset/done/            "check your e-mail" (shown even for unknown addresses)
+    reset/<uidb64>/<token>/         ConfirmView      -> choose a new password
+    reset/done/                     "password changed"
+
+Django's own auth views do the real work (hashing, tokens, expiry, CSRF). Reset links expire after
+``PASSWORD_RESET_TIMEOUT`` (3 days by default) and work once. E-mail delivery: see docs/accounts.md.
+"""
+from django.contrib.auth import views as auth_views
+from django.shortcuts import redirect, render
+from django.urls import reverse_lazy
+
+from siteconfig.models import SiteSettings
+
+from .forms import LoginForm, NewPasswordForm, RegisterForm, ResetRequestForm
 
 
 def register_view(request):
-    """Show and process the sign-up form (username + password twice).
+    """Sign-up. On success the user is sent to the login page (not logged in automatically).
 
-    GET   -> empty ``UserCreationForm``.
-    POST  -> validate; on success create the user and redirect to the blog list
-             (``posts:list``). On errors, re-render the form with messages.
-
-    Notes:
-    * The new user is NOT logged in automatically and is NOT staff, so they
-      cannot enter the admin or see draft pages.
-    * There is no login view/URL in this project yet (only the admin login at
-      ``/admin/``).
-    * Uses Django's CSRF protection (the template contains ``{% csrf_token %}``).
+    New users are NOT staff: they cannot enter the admin or see draft pages.
     Template: ``users/templates/users/register.html``.
     """
-    if request.method == "POST":
-        form = UserCreationForm(request.POST)
+    if request.user.is_authenticated:
+        return redirect('posts:list')
+    if request.method == 'POST':
+        form = RegisterForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('posts:list')
+            return redirect('%s?registered=1' % reverse_lazy('users:login'))
     else:
-        form = UserCreationForm()
+        form = RegisterForm()
+    return render(request, 'users/register.html', {'form': form, 'page_title': 'Register',
+                                                   'breadcrumbs': [('Register', '')]})
 
-    return render(request, 'users/register.html', {"form": form})
+
+class LoginView(auth_views.LoginView):
+    template_name = 'users/login.html'
+    authentication_form = LoginForm
+    redirect_authenticated_user = True      # a logged-in user opening /users/login/ is sent on
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        # Django's LoginView puts its own ``site`` (sites framework) in the context; the layout
+        # needs OUR ``site`` (admin -> Settings), so put that one back.
+        ctx.update(site=SiteSettings.load(), page_title='Log in', breadcrumbs=[('Log in', '')],
+                   registered=self.request.GET.get('registered') == '1')
+        return ctx
 
 
-def login_view(request): 
-    if request.method == "POST": 
-        form = AuthenticationForm(data=request.POST)
-        if form.is_valid(): 
-            login(request, form.get_user())
-            return redirect("posts:list")
-    else: 
-        form = AuthenticationForm()
-    return render(request, "users/login.html", { "form": form })
+class LogoutView(auth_views.LogoutView):
+    next_page = reverse_lazy('posts:list')
+
+
+class ResetView(auth_views.PasswordResetView):
+    template_name = 'users/password_reset_form.html'
+    form_class = ResetRequestForm
+    email_template_name = 'users/password_reset_email.txt'
+    subject_template_name = 'users/password_reset_subject.txt'
+    success_url = reverse_lazy('users:password_reset_done')
+
+    def form_valid(self, form):
+        self.extra_email_context = {'site_title': SiteSettings.load().site_title}
+        return super().form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        return {**super().get_context_data(**kwargs), 'page_title': 'Forgot password',
+                'breadcrumbs': [('Log in', reverse_lazy('users:login')), ('Forgot password', '')]}
+
+
+class ResetDoneView(auth_views.PasswordResetDoneView):
+    template_name = 'users/password_reset_done.html'
+
+    def get_context_data(self, **kwargs):
+        return {**super().get_context_data(**kwargs), 'page_title': 'Check your e-mail',
+                'breadcrumbs': [('Forgot password', reverse_lazy('users:password_reset')), ('Check your e-mail', '')]}
+
+
+class ConfirmView(auth_views.PasswordResetConfirmView):
+    template_name = 'users/password_reset_confirm.html'
+    form_class = NewPasswordForm
+    success_url = reverse_lazy('users:password_reset_complete')
+
+    def get_context_data(self, **kwargs):
+        return {**super().get_context_data(**kwargs), 'page_title': 'New password',
+                'breadcrumbs': [('New password', '')]}
+
+
+class CompleteView(auth_views.PasswordResetCompleteView):
+    template_name = 'users/password_reset_complete.html'
+
+    def get_context_data(self, **kwargs):
+        return {**super().get_context_data(**kwargs), 'page_title': 'Password changed',
+                'breadcrumbs': [('Password changed', '')]}

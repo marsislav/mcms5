@@ -18,10 +18,11 @@ In templates use the ``site`` variable from the context processor
 Sections
 --------
 The admin form is split into SECTIONS (tabs). Each section is one
-``fieldsets`` entry in ``siteconfig/admin.py``. Currently there is one:
+``fieldsets`` entry in ``siteconfig/admin.py``. Currently there are two:
 
-  General   site title, description, favicon, admin e-mail, location,
-            date format, time format, logo
+  General     site title, description, favicon, admin e-mail, location,
+              date format, time format, logo
+  Discussion  comments on/off, approval mode, replies, spam rules (comments app)
 
 To add a section (e.g. "SEO"): add the fields below + a migration, then add a
 fieldset to ``SiteSettingsAdmin.fieldsets``. See ``docs/settings.md``.
@@ -34,7 +35,7 @@ Replacing or clearing an image deletes the old file from disk (``save``).
 import datetime
 
 from django.core.exceptions import ValidationError
-from django.core.validators import FileExtensionValidator
+from django.core.validators import FileExtensionValidator, MaxValueValidator, MinValueValidator
 from django.db import models
 from django.template.defaultfilters import date as date_filter, time as time_filter
 from django.utils.deconstruct import deconstructible
@@ -61,6 +62,16 @@ TIME_FORMAT_CHOICES = [
     ('g:i A', '2:05 PM  (g:i A) - 12-hour'),
     ('g:i a', '2:05 pm  (g:i a) - 12-hour'),
     (CUSTOM, 'Custom...'),
+]
+
+# Discussion -> how new comments are treated (see comments/services.py::decide_status).
+MODERATION_MANUAL = 'manual'
+MODERATION_AUTO = 'auto'
+MODERATION_RETURNING = 'returning'
+COMMENT_MODERATION_CHOICES = [
+    (MODERATION_MANUAL, 'Manual approval - every comment waits until an admin approves it'),
+    (MODERATION_AUTO, 'Automatic approval - comments are published immediately'),
+    (MODERATION_RETURNING, 'Automatic for returning commenters - only the first comment of an e-mail waits for approval'),
 ]
 
 # Max upload sizes (bytes) - validated in the form (``clean_*`` below).
@@ -136,6 +147,41 @@ class SiteSettings(models.Model):
         validators=[MaxFileSize(MAX_LOGO_SIZE)],
         help_text='Site logo shown in the header and footer. PNG/SVG-like transparent images work best '
                   '(JPG, PNG, GIF, WebP; max 2 MB). If empty, the site title is shown as text.')
+
+    # --------------------------------------------------------------- Discussion
+    comments_enabled = models.BooleanField(
+        'Enable comments', default=True,
+        help_text='Master switch. When off, the comment form and existing comments are hidden on the whole site '
+                  '(nothing is deleted).')
+    comments_moderation = models.CharField(
+        'Comment approval', max_length=10, choices=COMMENT_MODERATION_CHOICES, default=MODERATION_MANUAL,
+        help_text='Staff (logged-in users with the staff flag) are always approved automatically.')
+    comments_require_name_email = models.BooleanField(
+        'Name and e-mail required', default=True,
+        help_text='Visitors must fill in a name and an e-mail address (the e-mail is never shown publicly).')
+    comments_registered_only = models.BooleanField(
+        'Only registered users can comment', default=False,
+        help_text='Visitors must be logged in to see the comment form.')
+    comments_threaded = models.BooleanField(
+        'Enable replies (threaded comments)', default=True,
+        help_text='Adds a "Reply" link to comments; replies are shown under the comment they answer.')
+    comments_max_depth = models.PositiveSmallIntegerField(
+        'Reply depth', default=3, validators=[MinValueValidator(2), MaxValueValidator(10)],
+        help_text='Number of levels, 2-10. 3 = comment, reply, reply to the reply. Used only when replies are enabled.')
+    comments_close_after_days = models.PositiveSmallIntegerField(
+        'Close comments after (days)', default=0, validators=[MaxValueValidator(3650)],
+        help_text='Automatically close comments on posts older than this many days. 0 = never.')
+    comments_max_links = models.PositiveSmallIntegerField(
+        'Hold for approval if more links than', default=2, validators=[MaxValueValidator(50)],
+        help_text='A comment with more links than this always waits for approval, even with automatic approval.')
+    comments_blocked_words = models.TextField(
+        'Blocked words', blank=True,
+        help_text='One word or phrase per line. A comment (text, name or e-mail) containing any of them is '
+                  'marked as spam and never shown. Not case sensitive.')
+    comments_email_admin = models.BooleanField(
+        'E-mail me about new comments', default=False,
+        help_text='Send a message to the Admin e-mail (General section) when a comment is posted or waits for approval. '
+                  'Needs working e-mail settings on the server.')
 
     class Meta:
         verbose_name = 'Settings'

@@ -12,6 +12,7 @@
     +-- /                  -> mcms5.views.homepage
     +-- /about/            -> mcms5.views.about
     +-- /posts/...         -> posts.urls   -> posts.views
+    +-- /comments/...      -> comments.urls -> comments.views (new comment, POST)
     +-- /users/...         -> users.urls   -> users.views
     +-- /ckeditor5/...     -> django_ckeditor_5 (image upload endpoint)
     +-- /<path>/           -> pages.urls   -> pages.views.page_detail   (catch-all, LAST)
@@ -34,8 +35,9 @@
 | `mcms5` | project package: settings, root URLs, fixed pages (`/`, `/about/`) | - | all apps |
 | `pages` | hierarchical static pages | `Page` | `django_ckeditor_5` |
 | `posts` | blog posts | `Post` | `django_ckeditor_5` |
+| `comments` | visitor comments + replies on posts, moderation (see [comments.md](comments.md)) | `Comment` | `posts`, `siteconfig` |
 | `menus` | navigation menus + admin builder | `Menu`, `MenuItem` | `pages`, `posts` |
-| `users` | public registration | - (uses `auth.User`) | `django.contrib.auth` |
+| `users` | registration, login/logout, forgot password (see [accounts.md](accounts.md)) | - (uses `auth.User`) | `django.contrib.auth` |
 | `search` | public site search `/search/` (pages + posts), Unicode-aware on SQLite (see [search.md](search.md)) | - | `pages`, `posts` |
 | `siteconfig` | admin **Settings** pane: site title/description, logo, favicon, e-mail, location, date/time formats (see [settings.md](settings.md)) | `SiteSettings` (singleton) | - |
 

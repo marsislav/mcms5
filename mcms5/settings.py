@@ -9,6 +9,7 @@ Sections in this file (top to bottom)
 1. Core / security      SECRET_KEY, DEBUG, ALLOWED_HOSTS     (CHANGE FOR PRODUCTION)
 2. INSTALLED_APPS       Django contrib + django_ckeditor_5 + our apps:
                           posts  - blog posts
+                          comments - comments + replies on posts
                           pages  - hierarchical static pages
                           menus  - navigation menus + admin menu builder
                           users  - public registration
@@ -61,6 +62,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django_ckeditor_5',
     'posts',
+    'comments',      # visitor comments on posts (Settings -> Discussion)
     'pages',
     'menus',
     'users',
@@ -171,13 +173,25 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # Email
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
 
-# NOTE: Django's real email setting is EMAIL_BACKEND; the ``MAILERS`` name below is not
-# a Django setting and is currently ignored. Emails are not sent by this project yet.
-MAILERS = {
-    'default': {
-        'BACKEND': 'django.core.mail.backends.console.EmailBackend',
-    },
-}
+# E-mail is used for "forgot password" (users app) and, optionally, comment notifications.
+# DEFAULT = console backend: messages are PRINTED in the terminal running the server, nothing is
+# really sent. For production set real SMTP, e.g. in the environment:
+#   DJANGO_EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+#   EMAIL_HOST=smtp.example.com  EMAIL_PORT=587  EMAIL_USE_TLS=1
+#   EMAIL_HOST_USER=...  EMAIL_HOST_PASSWORD=...  DEFAULT_FROM_EMAIL="My Site <no-reply@example.com>"
+# See docs/accounts.md.
+EMAIL_BACKEND = os.environ.get('DJANGO_EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'localhost')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '25'))
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', '') == '1'
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'webmaster@localhost')
+
+# Login: where @login_required-style redirects go and where a plain login lands (a ?next= wins).
+LOGIN_URL = 'users:login'
+LOGIN_REDIRECT_URL = 'posts:list'
+LOGOUT_REDIRECT_URL = 'posts:list'
 
 
 # =============================================================================

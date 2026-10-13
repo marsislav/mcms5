@@ -5,7 +5,7 @@ App: `siteconfig` · model: `SiteSettings` · admin: **Settings → Settings**
 (`/admin/siteconfig/sitesettings/`).
 
 The screen is split into **sections** shown as tabs. Currently there is one:
-**General**.
+**General** and **Discussion** (comments - see [comments.md](comments.md)).
 
 ## General section – options
 

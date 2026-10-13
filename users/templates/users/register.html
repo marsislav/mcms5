@@ -1,20 +1,17 @@
 {% extends "layout.html" %}
 {# NOTE: {% extends %} must be the first tag, so the documentation comment follows it. #}
 {% comment %}
-users/register.html - sign-up form (served by users.views.register_view at /users/register/).
-
-Context
--------
-form   Django's UserCreationForm (username, password1, password2) with validation errors.
+users/register.html - sign-up form (users.views.register_view at /users/register/).
+Context: form (RegisterForm: username, e-mail, password twice) with validation errors.
 {% endcomment %}
 {% block title %}Register a new user{% endblock %}
 
 {% block content %}
 <h1>Register a new user</h1>
-<form action="/users/register/" method="post">
-  {# CSRF token is mandatory for POST forms (CsrfViewMiddleware). #}
+<form method="post" action="{% url 'users:register' %}">
   {% csrf_token %}
-  {{ form }}
-  <button class="btn dento-btn">Submit</button>
+  {% include "users/_form.html" %}
+  <button type="submit" class="btn mcms-btn">Register</button>
 </form>
+<p class="mt-30">Already have an account? <a href="{% url 'users:login' %}">Log in</a></p>
 {% endblock %}

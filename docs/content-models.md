@@ -26,7 +26,7 @@ that slug **and** the previous page as parent; any miss -> 404.
 * A page cannot be its own ancestor (`Page.clean()` validates it in the admin).
 * Deleting a parent deletes its children (`CASCADE`).
 * A top-level page may not use a slug of a fixed route (`admin`, `posts`,
-  `users`, `ckeditor5`, `media`, `about`) - the fixed route wins and the page
+  `comments`, `users`, `ckeditor5`, `media`, `about`) - the fixed route wins and the page
   becomes unreachable.
 
 ## Post (`posts.models.Post`) - blog article
@@ -40,6 +40,7 @@ that slug **and** the previous page as parent; any miss -> 404.
 | `banner` | image; default `media/fallback.png` |
 | `categories` | many-to-many to `Category` (optional) |
 | `related` | hand-picked related posts (many-to-many to itself, symmetrical) |
+| `comments_open` | per-post comments switch (see [comments.md](comments.md)) |
 
 ## Category (`posts.models.Category`)
 

@@ -1,0 +1,17 @@
+/* Comments block of the post page (comments app). */
+.mcms-comments .comment-list { list-style: none; padding-left: 0; }
+.mcms-comments .comment-children { margin-left: 28px; border-left: 2px solid #eee; padding-left: 16px; }
+.mcms-comments .comment-item { margin: 18px 0; }
+.mcms-comments .comment-head small { margin-left: 8px; }
+.mcms-comments .comment-body p { margin: 4px 0; overflow-wrap: anywhere; }
+.mcms-comments .comment-reply { font-size: 13px; }
+.mcms-comments .comment-notice { background: #eef7ee; border: 1px solid #b9dcb9; padding: 10px 14px; border-radius: 4px; }
+.mcms-comments .comment-respond { margin-top: 30px; }
+.mcms-comments .errorlist { color: #ba2121; list-style: none; padding-left: 0; margin: 0 0 6px; }
+/* honeypot: off-screen, not display:none (some bots skip hidden fields) */
+.mcms-comments .comment-hp { position: absolute; left: -9999px; height: 0; overflow: hidden; }
+
+/* Account links in the top bar (users app) */
+.top-header-account { margin-right: 14px; font-size: 13px; }
+.top-header-account a, .top-header-account span, .top-header-account .link-button { color: #fff; margin-left: 10px; }
+.top-header-account .link-button { background: none; border: 0; padding: 0; cursor: pointer; font-size: inherit; text-decoration: underline; }
