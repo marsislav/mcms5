@@ -9,6 +9,7 @@ URL                   Handled by                      Notes
 /admin/               django admin                    includes the menu builder
 /                     mcms5.views.homepage            fixed home page
 /about/               mcms5.views.about               fixed About page
+/search/               search.urls                     site search (?q=...)
 /posts/...            posts.urls                      blog list + detail
 /users/...            users.urls                      registration
 /ckeditor5/...        django_ckeditor_5.urls          image upload endpoint
@@ -29,6 +30,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.homepage),
     path('about/', views.about),
+    path('search/', include('search.urls')),
     path('posts/', include('posts.urls')),
     path('users/', include('users.urls')),
     path('ckeditor5/', include('django_ckeditor_5.urls')),

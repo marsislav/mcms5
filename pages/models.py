@@ -24,8 +24,10 @@ from django.db import models
 from django.urls import reverse
 from django_ckeditor_5.fields import CKEditor5Field
 
+from mcms5.softdelete import SoftDeleteModel
 
-class Page(models.Model):
+
+class Page(SoftDeleteModel):
     """A static page (About, Contact, Services...) as opposed to a dated blog Post.
 
     Pages can be nested: a page with parent "services" and slug "web" is served
@@ -74,7 +76,7 @@ class Page(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
-    class Meta:
+    class Meta(SoftDeleteModel.Meta):
         ordering = ['menu_order', 'title']
         constraints = [
             # Same slug is allowed under different parents, but not twice under one parent.
@@ -86,6 +88,21 @@ class Page(models.Model):
 
     def __str__(self):
         return self.full_path()
+
+    # -- Trash (mcms5/softdelete.py) ---------------------------------------
+    # Deleting a page also trashes its sub-pages (same timestamp); restoring the page
+    # restores exactly those sub-pages. A page can't be restored while its parent is in the Trash.
+    def _soft_delete(self, ts):
+        super()._soft_delete(ts)
+        for child in Page.all_objects.filter(parent_id=self.pk, deleted_at__isnull=True):
+            child._soft_delete(ts)
+
+    def _restore(self, ts):
+        if self.parent_id and Page.all_objects.filter(pk=self.parent_id, deleted_at__isnull=False).exists():
+            raise ValidationError('Restore the parent page first: %s' % Page.all_objects.get(pk=self.parent_id).title)
+        super()._restore(ts)
+        for child in Page.all_objects.filter(parent_id=self.pk, deleted_at=ts):
+            child._restore(ts)
 
     def full_path(self):
         """Return the URL path of this page *without* leading/trailing slashes.
@@ -158,3 +175,12 @@ class Page(models.Model):
             if node.pk is not None and node.pk == self.pk:
                 raise ValidationError({'parent': 'A page cannot be a child of itself or its own descendant.'})
             node = node.parent
+
+
+class TrashedPage(Page):
+    """Proxy used only to show the Trash of pages in the admin."""
+
+    class Meta:
+        proxy = True
+        verbose_name = 'Trash: page'
+        verbose_name_plural = 'Trash: Pages'

@@ -1,12 +1,12 @@
 (function($) {
   'use strict';
-  var dento_window = $(window);
+  var mcms_window = $(window);
 
   // *******************************
   // :: 1.0 Preloader Active Code
   // *******************************
 
-  dento_window.on('load', function() {
+  mcms_window.on('load', function() {
     $('#preloader').fadeOut('1000', function() {
       $(this).remove();
     });
@@ -17,7 +17,7 @@
   // *******************************
 
   if($.fn.classyNav) {
-    $('#dentoNav').classyNav();
+    $('#mcmsNav').classyNav();
   }
 
   // ***********************************
@@ -82,7 +82,7 @@
     $('[data-toggle="tooltip"]').tooltip();
   }
   // :: 5.0 Wow Active Code
-  if(dento_window.width() > 767) {
+  if(mcms_window.width() > 767) {
     new WOW().init();
   }
   // :: 6.0 CounterUp Active Code
@@ -110,7 +110,7 @@
   }
   // :: 8.0 Masonary Gallery Active Code
   if($.fn.imagesLoaded) {
-    $('.dento-portfolio').imagesLoaded(function() {
+    $('.mcms-portfolio').imagesLoaded(function() {
       // filter items on button click
       $('.portfolio-menu').on('click', 'button', function() {
         var filterValue = $(this).attr('data-filter');
@@ -119,7 +119,7 @@
         });
       });
       // init Isotope
-      var $grid = $('.dento-portfolio').isotope({
+      var $grid = $('.mcms-portfolio').isotope({
         itemSelector: '.single_gallery_item',
         percentPosition: true,
         masonry: {
@@ -145,14 +145,14 @@
   // }
   // :: 12.0 ScrollUp Active Code
   if($.fn.scrollUp) {
-    dento_window.scrollUp({
+    mcms_window.scrollUp({
       scrollSpeed: 2000,
       scrollText: '<i class="arrow_up"</i>'
     });
   }
   // :: 13.0 Sticky Active Code
-  dento_window.on('scroll', function() {
-    if(dento_window.scrollTop() > 40) {
+  mcms_window.on('scroll', function() {
+    if(mcms_window.scrollTop() > 40) {
       $('.main-header-area').addClass('sticky');
     } else {
       $('.main-header-area').removeClass('sticky');

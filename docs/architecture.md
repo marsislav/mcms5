@@ -36,6 +36,8 @@
 | `posts` | blog posts | `Post` | `django_ckeditor_5` |
 | `menus` | navigation menus + admin builder | `Menu`, `MenuItem` | `pages`, `posts` |
 | `users` | public registration | - (uses `auth.User`) | `django.contrib.auth` |
+| `search` | public site search `/search/` (pages + posts), Unicode-aware on SQLite (see [search.md](search.md)) | - | `pages`, `posts` |
+| `siteconfig` | admin **Settings** pane: site title/description, logo, favicon, e-mail, location, date/time formats (see [settings.md](settings.md)) | `SiteSettings` (singleton) | - |
 
 Dependency direction (arrow = "imports / needs"):
 
@@ -100,6 +102,21 @@ Legend: **Uses** = what it needs; **Used by** = who needs it.
 | `urls.py` | `posts:list`, `posts:page` |
 | `templates/posts/posts_list.html`, `post_page.html` | list and detail templates |
 | `admin.py` | default admin registration |
+
+### Editor columns (no app, static files only)
+
+`static/js/ckeditor-columns.js` + `static/css/mcms-columns.css` - see [editor-columns.md](editor-columns.md).
+
+### App `siteconfig/`
+
+| File | What it does |
+|---|---|
+| `models.py` | `SiteSettings` singleton (`load()`, validation, format helpers) |
+| `admin.py` | Settings pane; sections = `fieldsets` shown as tabs |
+| `context_processors.py` | adds `site` to every template |
+| `templatetags/site_tags.py` | `site_date`, `site_time`, `site_datetime` filters |
+| `templates/admin/siteconfig/sitesettings/change_form.html` | tabs + custom-format toggle |
+| `tests.py` | settings tests |
 
 ### App `menus/`
 

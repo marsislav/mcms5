@@ -1,0 +1,354 @@
+{% comment %}
+==============================================================================
+templates/layout.html - THE BASE TEMPLATE of the whole site
+==============================================================================
+Every public page extends this file:
+    {% extends "layout.html" %}
+It is a purchased/adapted "Dento" HTML theme turned into a Django template.
+
+BLOCKS a child template can override
+------------------------------------
+  title    text inside <title> (browser tab)
+  image    thumbnail column of the main content card (used by posts_list.html)
+  content  main content card body (every page puts its content here)
+
+CONTEXT VARIABLES this layout reads (all optional)
+--------------------------------------------------
+  page_title    text of the big hero heading. Default: "mCMS 5".
+                Set by the views (pages.views, posts.views, mcms5.views).
+  breadcrumbs   list of (label, url) pairs = the trail AFTER "Home".
+                  []            -> we are on the home page ("Home" shown as active)
+                  [("About","/about/")]            -> Home > About
+                  [("Blog","/posts/"),("Post","")] -> Home > Blog > Post
+                The LAST pair is rendered as plain text (current page), so its
+                url is ignored. See docs/breadcrumbs.md.
+  site          admin -> Settings (siteconfig.SiteSettings): site.site_title, site.site_description,
+                site.logo, site.favicon, site.admin_email, site.location, site.format_date(...).
+                Added by the 'siteconfig.context_processors.site_settings' context processor.
+  request       added by the 'request' context processor; needed by
+                {% render_menu %} to highlight the current menu item.
+
+TEMPLATE TAGS used
+------------------
+  {% load static %}      -> {% static 'css/style.css' %} resolves files from /static/
+  {% load site_tags %}   -> {{ value|site_date }} / |site_time / |site_datetime (formats from admin -> Settings)
+  {% load menu_tags %}   -> {% render_menu 'primary' %} / {% render_menu 'footer' %}
+                            (menus/templatetags/menu_tags.py; menus edited in
+                            admin -> Menus -> "Edit structure")
+
+KNOWN PLACEHOLDERS (static demo content from the theme, not yet dynamic)
+-----------------------------------------------------------------------
+  * Top bar social links, "Booking Now" button (address/e-mail/logo/title/favicon are now dynamic: admin -> Settings)
+  * Second "Single Blog Item" card, pagination, sidebar widgets (search,
+    categories, recent news, ad banner)
+  * Footer text, opening hours, newsletter form, contact info
+  * Image paths like ./img/... point to files that are NOT in /static/ yet,
+    so those images are broken until they are added and wired with {% static %}.
+Replace these with real data/blocks as the site grows.
+==============================================================================
+{% endcomment %}
+
+<!DOCTYPE html>
+{% load static menu_tags site_tags %}
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="description" content="{{ site.site_description|default:site.site_title }}">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  {% comment %}
+  Browser tab title. Child templates override {% block title %}. 
+{% endcomment %}
+ <title>{% block title %}{{ site.site_title }}{% endblock %}</title>
+
+
+  <!-- Favicon -->
+  {% if site.favicon %}<link rel="icon" href="{{ site.favicon.url }}">{% endif %}
+
+  {% comment %}
+  Stylesheets (served from the project's ./static folder via {% static %}).
+       Order matters: later files override earlier ones.
+         style.css       theme's main styles (includes the breadcrumb styles, section 16)
+         bootstrap       grid + components (breadcrumb, pagination, buttons...)
+         animate         animation classes (used with WOW.js)
+         classy-nav      responsive navigation menu (styles the {% render_menu %} output)
+         owl.carousel / magnific-popup   carousel / lightbox plugins
+         font-awesome    icon font (fa fa-home etc.)
+         style.oth.css   extra project-specific overrides 
+{% endcomment %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/animate.css' %}">
+    <link rel="stylesheet" href="{% static 'css/classy-nav.css' %}">
+    <link rel="stylesheet" href="{% static 'css/owl.carousel.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/magnific-popup.css' %}">
+    <link rel="stylesheet" href="{% static 'css/font-awesome.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style.oth.css' %}">
+    <link rel="stylesheet" href="{% static 'css/mcms-columns.css' %}">{# responsive editor columns, see docs/editor-columns.md #}
+
+</head>
+
+<body>
+  <!-- Preloader overlay; hidden by the theme JS (static/js/default-assets/active.js) once the page loads -->
+  <div id="preloader">
+    <div class="preload-content">
+      <div id="dento-load"></div>
+    </div>
+  </div>
+
+  <!-- ***** Header Area Start ***** -->
+  <header class="header-area">
+    <!-- Top Header Area -->
+    <div class="top-header-area">
+      <div class="container h-100">
+        <div class="row h-100 align-items-center">
+          <!-- Top Content -->
+          <div class="col-6 col-md-9 col-lg-8">
+            <div class="top-header-content">
+              {% if site.location %}<a href="#" data-toggle="tooltip" data-placement="bottom" title="{{ site.location }}"><i class="fa fa-map-marker"></i> <span>{{ site.location }}</span></a>{% endif %}
+              {% if site.admin_email %}<a href="mailto:{{ site.admin_email }}" data-toggle="tooltip" data-placement="bottom" title="{{ site.admin_email }}"><i class="fa fa-envelope"></i> <span>{{ site.admin_email }}</span></a>{% endif %}
+            </div>
+          </div>
+          <!-- Top Header Social Info -->
+          <div class="col-6 col-md-3 col-lg-4">
+            <div class="top-header-social-info text-right">
+              <a href="#" data-toggle="tooltip" data-placement="bottom" title="Facebook"><i class="fa fa-facebook"></i></a>
+              <a href="#" data-toggle="tooltip" data-placement="bottom" title="Twitter"><i class="fa fa-twitter"></i></a>
+              <a href="#" data-toggle="tooltip" data-placement="bottom" title="Google Plus"><i class="fa fa-google-plus"></i></a>
+              <a href="#" data-toggle="tooltip" data-placement="bottom" title="Linkedin"><i class="fa fa-linkedin"></i></a>
+              <a href="#" data-toggle="tooltip" data-placement="bottom" title="Pinterest"><i class="fa fa-pinterest"></i></a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Top Header End -->
+
+    <!-- Main Header Start -->
+    <div class="main-header-area">
+      <div class="classy-nav-container breakpoint-off">
+        <div class="container">
+          <!-- Classy Menu -->
+          <nav class="classy-navbar justify-content-between" id="dentoNav">
+
+            <!-- Logo -->
+            <a class="nav-brand" href="/">{% if site.logo %}<img src="{{ site.logo.url }}" alt="{{ site.site_title }}">{% else %}{{ site.site_title }}{% endif %}</a>
+
+            <!-- Navbar Toggler -->
+            <div class="classy-navbar-toggler">
+              <span class="navbarToggler"><span></span><span></span><span></span></span>
+            </div>
+
+            <!-- Menu -->
+            <div class="classy-menu">
+
+              <!-- Close Button -->
+              <div class="classycloseIcon">
+                <div class="cross-wrap"><span class="top"></span><span class="bottom"></span></div>
+              </div>
+
+              <!-- Nav Start -->
+              <div class="classynav">
+                {# Main navigation. Items come from the "primary" Menu in the database. #}
+                {% render_menu 'primary' %}
+              </div>
+              <!-- Nav End -->
+            </div>
+
+            <!-- Booking Now Button -->
+            <a href="#" class="btn dento-btn booking-btn">Booking Now</a>
+          </nav>
+        </div>
+      </div>
+    </div>
+  </header>
+  <!-- ***** Header Area End ***** -->
+
+  {% comment %}
+  ***** Breadcrumb Area Start *****
+       Two parts:
+         1. hero banner with the page heading  ({{ page_title }})
+         2. breadcrumb trail                   ({{ breadcrumbs }})
+       Both are filled by the VIEW (see docs/breadcrumbs.md). The CSS for the
+       trail is in static/css/style.css under ".breadcumb--con .breadcrumb"
+       (note the theme's spelling "breadcumb"). 
+{% endcomment %}
+  <div class="breadcumb-area bg-img bg-gradient-overlay" style="background-image: url(img/bg-img/12.jpg);">
+    <div class="container h-100">
+      <div class="row h-100 align-items-center">
+        <div class="col-12">
+          <h2 class="title">{{ page_title|default:site.site_title }}</h2>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="breadcumb--con">
+    <div class="container">
+      <div class="row">
+        <div class="col-12">
+          <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+              {# "Home" is always the first crumb. If the view passed no trail we ARE on the home page, so it is shown as the active item without a link. #}
+              {% if breadcrumbs %}
+                <li class="breadcrumb-item"><a href="/"><i class="fa fa-home"></i> Home</a></li>
+                {# Each crumb is a (label, url) tuple, unpacked directly by the for-loop. #}
+                {% for label, url in breadcrumbs %}
+                  {# Last crumb = current page: plain text, no link, marked for screen readers. #}
+                  {% if forloop.last %}
+                    <li class="breadcrumb-item active" aria-current="page">{{ label }}</li>
+                  {% else %}
+                    <li class="breadcrumb-item"><a href="{{ url }}">{{ label }}</a></li>
+                  {% endif %}
+                {% endfor %}
+              {% else %}
+                <li class="breadcrumb-item active" aria-current="page"><i class="fa fa-home"></i> Home</li>
+              {% endif %}
+            </ol>
+          </nav>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- ***** Breadcrumb Area End ***** -->
+
+  <!-- *****Blog Area Start ***** (main content + sidebar; the 8/4 column split is Bootstrap's grid) -->
+  <section class="dento-blog-area mt-50">
+    <div class="container">
+      <div class="row">
+        <div class="col-12">
+
+          <!-- Site search (this layout has no sidebar): GET /search/?q=... -->
+          <div class="single-widget-area search-widget mb-30">
+            <form action="{% url 'search' %}" method="get" role="search">
+              <input type="search" name="q" class="form-control" placeholder="Search..." aria-label="Search">
+              <button type="submit" aria-label="Search"><i class="fa fa-search"></i></button>
+            </form>
+          </div>
+
+          <!-- Single Blog Item -->
+          <div class="single-page-item style-2 d-flex flex-wrap align-items-center mb-50">
+        
+            <!-- Blog Content -->
+            <div class="page-content flex-grow-1" style="min-width:0">{# flex-grow: content card fills the row, so %-width column layouts (docs/editor-columns.md) get the full width #}            
+              {# BLOCK "content": the main body of every page. #}
+              <div>{% block content %}  {% endblock %}</div>
+            </div>
+          </div>
+          
+        
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- *****Blog Area End ***** -->
+
+  <!-- ***** Footer Area Start *****  (contact + hours + newsletter are static placeholders; Quick Link uses the dynamic "footer" menu) -->
+  <footer class="footer-area bg-img bg-gradient-overlay" style="background-image: url(img/bg-img/3.jpg);">
+    <div class="container">
+      <div class="row">
+        <!-- Single Footer Widget -->
+        <div class="col-12 col-sm-6 col-lg-4">
+          <div class="single-footer-widget">
+            <a href="/" class="d-block mb-4">{% if site.logo %}<img src="{{ site.logo.url }}" alt="{{ site.site_title }}">{% else %}{{ site.site_title }}{% endif %}</a>
+            <p>Etiam sutor risus, dapibus act elefend katen, lacinia sitamet denim. Mauris sagittis kansa interdum dignissim.</p>
+            <div class="footer-contact">
+              {% if site.location %}<p><i class="icon_pin"></i> {{ site.location }}</p>{% endif %}
+              <p><i class="icon_phone"></i> +359 84. 2252. 2250. 122</p>
+              {% if site.admin_email %}<p><i class="icon_mail"></i> {{ site.admin_email }}</p>{% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Single Footer Widget -->
+        <div class="col-12 col-sm-6 col-lg">
+          <div class="single-footer-widget">
+            <!-- Widget Title -->
+            <h5 class="widget-title">Opening Hours</h5>
+
+            <!-- Opening Hours -->
+            <ul class="opening-hours">
+              <li><span>Mon-Wed</span> <span>8.00-18.00</span></li>
+              <li><span>Thu-Fri</span> <span>8.00-17.00</span></li>
+              <li><span>Sat</span> <span>9.00-17.00</span></li>
+              <li><span>Sun</span> <span>10.00-17.00</span></li>
+              <li><span>Holiday</span> <span>Closed</span></li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Single Footer Widget -->
+        <div class="col-12 col-sm-6 col-lg">
+          <div class="single-footer-widget">
+            <!-- Widget Title -->
+            <h5 class="widget-title">Quick Link</h5>
+
+            <!-- Quick Links Nav -->
+            <nav>
+              {# Footer links: the "footer" Menu from the database. #}
+              {% render_menu 'footer' %}
+            </nav>
+          </div>
+        </div>
+
+        <!-- Single Footer Widget -->
+        <div class="col-12 col-sm-6 col-lg">
+          <div class="single-footer-widget">
+            <!-- Widget Title -->
+            <h5 class="widget-title">Newsletter</h5>
+
+            <p>We will send out weekly newest article and some great offers</p>
+            <!-- Newsletter Form -->
+            <div class="footer-newsletter-form">
+              <form action="#" method="post">
+                <input type="email" name="nl-email" value="" placeholder="Email Address">
+                <button type="submit"><i class="fa fa-paper-plane" aria-hidden="true"></i></button>
+              </form>
+            </div>
+
+            <!-- Social Info -->
+            <div class="footer-social-info">
+              <a href="#" data-toggle="tooltip" data-placement="top" title="Facebook"><i class="fa fa-facebook"></i></a>
+              <a href="#" data-toggle="tooltip" data-placement="top" title="Twitter"><i class="fa fa-twitter"></i></a>
+              <a href="#" data-toggle="tooltip" data-placement="top" title="Linkedin"><i class="fa fa-linkedin"></i></a>
+              <a href="#" data-toggle="tooltip" data-placement="top" title="Pinterest"><i class="fa fa-pinterest"></i></a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Copywrite Area -->
+    <div class="container">
+      <div class="row">
+        <div class="col-12">
+          <div class="copywrite-content">
+            <p>
+Copyright &copy;<script>document.write(new Date().getFullYear());</script> All rights reserved | Build with <i class="fa fa-heart-o" aria-hidden="true"></i> by <a href="https://marsislav.net" target="_blank">mCMS 5</a>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+  <!-- ***** Footer Area End ***** -->
+
+  <!-- ******* All JS *******
+       Loaded with `defer`: scripts download in parallel and run IN ORDER after the HTML is parsed.-->
+
+    <script src="{% static '/js/jquery.min.js' %}" defer></script>
+    <script src="{% static '/js/popper.min.js' %}" defer></script>
+    <script src="{% static '/js/bootstrap.min.js' %}" defer></script>
+    <script src="{% static 'js/mcms.bundle.js' %}" defer></script>
+    <script src="{% static 'js/default-assets/active.js' %}" defer></script>
+    <script src="{% static 'js/main.js' %}" defer></script>
+
+</body>
+
+</html>
+
+
+
+
+

@@ -1,0 +1,6 @@
+{# Category links of ``post`` (include inside a loop/context that has ``post``). #}
+{% if post.categories.all %}
+<p class="post-categories"><small><i class="fa fa-folder-o"></i>
+  {% for c in post.categories.all %}<a href="{{ c.get_absolute_url }}">{{ c.name }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}
+</small></p>
+{% endif %}

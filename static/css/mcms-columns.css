@@ -1,0 +1,79 @@
+/* ==========================================================================
+   mcms-columns.css - responsive COLUMNS layout for CKEditor content
+   ==========================================================================
+   Markup produced by the "Columns" toolbar dropdown (static/js/ckeditor-columns.js):
+
+     <div class="mcms-cols mcms-cols-3">
+       <div class="mcms-col"><p>...</p></div>
+       <div class="mcms-col"><p>...</p></div>
+       <div class="mcms-col"><p>...</p></div>
+     </div>
+
+   Loaded in TWO places (same file):
+     1. the public site   -> templates/layout.html, templates/full-page.html
+     2. the editor        -> CKEDITOR_5_CUSTOM_CSS in mcms5/settings.py
+   so the columns look the same while editing and on the site.
+
+   Columns per row (CSS grid, no Bootstrap needed):
+
+     class           desktop >=1200   laptop 992-1199   tablet 576-991   mobile <576
+     mcms-cols-1          1                1                 1               1
+     mcms-cols-2          2                2                 2               1
+     mcms-cols-3          3                3                 3               1
+     mcms-cols-4          4                4                 2               1
+     mcms-cols-5          5                5                 3               1
+     mcms-cols-6          6                6                 3               1
+     mcms-cols-12        12                6                 4               2
+
+   To change the breakpoints/counts edit the variables/media queries below.
+   ========================================================================== */
+
+.mcms-cols {
+  --mcms-cols: 1;                 /* columns in the current row (set per class below) */
+  --mcms-gap: 24px;               /* space between columns */
+  display: grid;
+  width: 100%;                    /* some theme wrappers are flex containers: do not shrink to content */
+  grid-template-columns: repeat(var(--mcms-cols), minmax(0, 1fr)); /* minmax(0,..) lets long words/images shrink */
+  gap: var(--mcms-gap);
+  margin: 0 0 1.5em;
+}
+.mcms-cols > .mcms-col { min-width: 0; }
+.mcms-cols > .mcms-col > :first-child { margin-top: 0; }
+.mcms-cols > .mcms-col > :last-child  { margin-bottom: 0; }
+.mcms-cols img { max-width: 100%; height: auto; }
+
+/* ---- desktop (>=1200px): one column per cell ---- */
+.mcms-cols-1  { --mcms-cols: 1; }
+.mcms-cols-2  { --mcms-cols: 2; }
+.mcms-cols-3  { --mcms-cols: 3; }
+.mcms-cols-4  { --mcms-cols: 4; }
+.mcms-cols-5  { --mcms-cols: 5; }
+.mcms-cols-6  { --mcms-cols: 6; }
+.mcms-cols-12 { --mcms-cols: 12; --mcms-gap: 12px; }
+
+/* ---- laptop (<1200px) ---- */
+@media (max-width: 1199.98px) {
+  .mcms-cols-12 { --mcms-cols: 6; }
+}
+/* ---- tablet (<992px) ---- */
+@media (max-width: 991.98px) {
+  .mcms-cols-4  { --mcms-cols: 2; }
+  .mcms-cols-5  { --mcms-cols: 3; }
+  .mcms-cols-6  { --mcms-cols: 3; }
+  .mcms-cols-12 { --mcms-cols: 4; }
+}
+/* ---- mobile (<576px) ---- */
+@media (max-width: 575.98px) {
+  .mcms-cols-2, .mcms-cols-3, .mcms-cols-4,
+  .mcms-cols-5, .mcms-cols-6 { --mcms-cols: 1; }
+  .mcms-cols-12 { --mcms-cols: 2; }
+}
+
+/* ---- inside the EDITOR only: make columns visible (dashed frames) ---- */
+.ck-content .mcms-cols > .mcms-col {
+  outline: 1px dashed #9aa5b1;
+  outline-offset: 2px;
+  padding: 6px 8px;
+  min-height: 2.5em;
+}
+.ck-content .mcms-cols { position: relative; }

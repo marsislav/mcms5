@@ -65,3 +65,13 @@ or `{% static %}` references.
 
 Django escapes `{{ variables }}` automatically. Exceptions (`|safe`) are only
 `page.body` and `post.body`, which contain editor HTML.
+
+
+## Site settings in templates
+
+`layout.html` / `full-page.html` read the variable `site` (admin → Settings): title, meta description, favicon, logo, e-mail, location. Date filters: `{% load site_tags %}` then `|site_date`, `|site_time`, `|site_datetime`. Details: [settings.md](settings.md).
+
+
+## Search box
+
+`layout.html` (sidebar) and `full-page.html` (top of content) contain a GET form to `{% url 'search' %}` with the field `q`. Results: `search/templates/search/results.html`. See [search.md](search.md).

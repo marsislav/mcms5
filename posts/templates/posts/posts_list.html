@@ -1,4 +1,5 @@
 {% extends "layout.html" %}
+{% load site_tags %}
 {# NOTE: {% extends %} must be the first tag, so the documentation comment follows it. #}
 {% comment %}
 posts/posts_list.html - blog index (served by posts.views.posts_list).
@@ -6,6 +7,7 @@ posts/posts_list.html - blog index (served by posts.views.posts_list).
 Context
 -------
 posts        queryset of Post, oldest first
+category     (optional) the Category being browsed, set by posts.views.category_posts
 page_title / breadcrumbs   used by layout.html (hero heading + breadcrumb bar)
 
 Fills TWO blocks of layout.html:
@@ -17,19 +19,26 @@ Each link uses {% url 'posts:page' slug=... %} -> /posts/<slug>
 {% block title %}Posts list{% endblock %}
 
 {% block content %}
-THIS IS POST LIST PAGE (EXTENDED)
+
+{% if category %}<p><small>Category: <strong>{{ category.name }}</strong></small></p>{% endif %}
 {% for post in posts %}
     <h2>
         <a href="{% url 'posts:page' slug=post.slug %}">{{ post.title }}</a>
     </h2>
     {# Plain-text excerpt: strip the HTML tags, then cut to 40 words. #}
     <p>{{ post.body|striptags|truncatewords:40 }}</p>
-    <p><small>{{ post.date }}</small></p>
+    {% include "posts/_post_categories.html" %}
+    <div class="post-meta">
+                <a href="#"><i class="fa fa-clock-o"></i> {{ post.date|site_datetime }}</a>
+                <a href="#"><i class="fa fa-comment-o"></i> 3 Comments</a>
+              </div>
+   
+{% empty %}
+    <p>No posts yet.</p>
 {% endfor %}
 {% endblock %}
 
 {% block image %}
-THIS IS POST LIST PAGE (EXTENDED)
 {% for post in posts %}
     <a href="{% url 'posts:page' slug=post.slug %}">
         <img src="{{ post.banner.url }}" alt="{{ post.title }}"/>

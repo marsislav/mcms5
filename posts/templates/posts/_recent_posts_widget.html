@@ -1,0 +1,18 @@
+{# Sidebar "Recent Posts" box (posts_tags.recent_posts_widget): newest posts first. #}
+{% load site_tags %}
+{% if recent_posts %}
+<div class="single-widget-area news-widget">
+  <h5 class="widget-title">Recent Posts</h5>
+  {% for post in recent_posts %}
+    <div class="single-news-area d-flex align-items-center">
+      <div class="blog-thumbnail">
+        <img src="{{ post.banner.url }}" alt="{{ post.title }}">
+      </div>
+      <div class="blog-content">
+        <a href="{{ post.get_absolute_url }}" class="post-title">{{ post.title }}</a>
+        <span class="post-date">{{ post.date|site_date }}</span>
+      </div>
+    </div>
+  {% endfor %}
+</div>
+{% endif %}

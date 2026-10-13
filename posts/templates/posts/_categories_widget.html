@@ -1,0 +1,11 @@
+{# Sidebar "Categories" box (posts_tags.categories_widget). #}
+{% if categories %}
+<div class="single-widget-area catagories-widget">
+  <h5 class="widget-title">Categories</h5>
+  <ul class="catagories-list">
+    {% for category in categories %}
+      <li><a href="{{ category.get_absolute_url }}">{{ category.name }} ({{ category.post_count }})</a></li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}

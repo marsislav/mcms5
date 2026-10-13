@@ -1,4 +1,5 @@
 {% extends "layout.html" %}
+{% load site_tags %}
 {# NOTE: {% extends %} must be the first tag, so the documentation comment follows it. #}
 {% comment %}
 posts/post_page.html - a single blog post (served by posts.views.post_page).
@@ -6,6 +7,7 @@ posts/post_page.html - a single blog post (served by posts.views.post_page).
 Context
 -------
 post         the Post instance
+related_posts list of related Post objects (hand-picked, else same category), may be empty
 page_title / breadcrumbs   used by layout.html (hero heading + breadcrumb bar)
 
 ``post.body|safe`` is unescaped CKEditor HTML (trusted staff content only).
@@ -16,6 +18,17 @@ page_title / breadcrumbs   used by layout.html (hero heading + breadcrumb bar)
 {% block content %}
 <h1>{{ post.title }}</h1>
 <img src="{{ post.banner.url }}" alt="{{ post.title }}"/>
-<p><small>{{ post.date }}</small></p>
+<p><small>{{ post.date|site_datetime }}</small></p>
+{% include "posts/_post_categories.html" %}
 <div class="post-body">{{ post.body|safe }}</div>
+{% if related_posts %}
+<div class="related-posts mt-50">
+    <h4>Related posts</h4>
+    <ul>
+    {% for rp in related_posts %}
+        <li><a href="{{ rp.get_absolute_url }}">{{ rp.title }}</a> <small>{{ rp.date|site_date }}</small></li>
+    {% endfor %}
+    </ul>
+</div>
+{% endif %}
 {% endblock %}

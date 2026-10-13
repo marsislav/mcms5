@@ -1,4 +1,4 @@
-{% extends "layout.html" %}
+{% extends "full-page.html" %}
 {# NOTE: {% extends %} must be the first tag, so the documentation comment follows it. #}
 {% comment %}
 pages/page.html - template for every CMS Page (served by pages.views.page_detail).
@@ -6,13 +6,14 @@ pages/page.html - template for every CMS Page (served by pages.views.page_detail
 Context
 -------
 page         the Page instance (title, body, banner, is_published...)
-page_title   (used by layout.html hero heading)
-breadcrumbs  (used by layout.html breadcrumb bar)
+page_title   (used by full-page.html hero heading)
+breadcrumbs  (used by full-page.html breadcrumb bar)
 
 Security note: ``page.body|safe`` outputs the editor's HTML unescaped. This is
 intended (CKEditor produces HTML) and acceptable only because just trusted
 staff can edit pages.
 {% endcomment %}
+full page
 {% block title %}{{ page.title }}{% endblock %}
 
 {% block content %}

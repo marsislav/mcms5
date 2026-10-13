@@ -1,0 +1,67 @@
+{% extends "admin/change_form.html" %}
+{% comment %}
+siteconfig/change_form.html - turns the fieldsets of the Settings form into TABS.
+
+How it works (no external libraries):
+  * every <fieldset class="module"> becomes a tab panel; its <h2> is the tab label
+  * the active tab is kept in the URL hash (#general) so it survives saving
+  * a tab containing a validation error is opened automatically and marked red
+  * with only one section the tab bar still shows it (ready for more sections)
+  * date/time "Custom..." inputs are shown only when "Custom..." is selected
+{% endcomment %}
+{% block extrahead %}{{ block.super }}
+<style>
+  .settings-tabs { display:flex; gap:4px; margin:0 0 16px; border-bottom:2px solid var(--hairline-color,#ddd); flex-wrap:wrap; }
+  .settings-tabs button { background:none; border:0; border-bottom:3px solid transparent; margin-bottom:-2px;
+    padding:10px 18px; font-size:14px; font-weight:600; cursor:pointer; color:var(--body-quiet-color,#666); }
+  .settings-tabs button:hover { color:var(--link-hover-color,#036); }
+  .settings-tabs button.active { color:var(--link-fg,#417690); border-bottom-color:var(--link-fg,#417690); }
+  .settings-tabs button.has-error { color:var(--error-fg,#ba2121); }
+  #content-main fieldset.module.tab-hidden { display:none; }
+  #content-main fieldset.module > h2 { display:none; }
+</style>
+{% endblock %}
+
+{% block admin_change_form_document_ready %}{{ block.super }}
+<script>
+(function () {
+  var panels = Array.prototype.slice.call(document.querySelectorAll('#content-main form fieldset.module'));
+  if (!panels.length) return;
+
+  // ---- tabs --------------------------------------------------------------
+  var bar = document.createElement('div');
+  bar.className = 'settings-tabs';
+  panels.forEach(function (p, i) {
+    var h = p.querySelector('h2');
+    var label = h ? h.textContent.trim() : 'Section ' + (i + 1);
+    var id = label.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    p.dataset.tab = id;
+    var b = document.createElement('button');
+    b.type = 'button'; b.textContent = label; b.dataset.tab = id;
+    if (p.querySelector('.errorlist')) b.classList.add('has-error');
+    b.addEventListener('click', function () { show(id); });
+    bar.appendChild(b);
+  });
+  panels[0].parentNode.insertBefore(bar, panels[0]);
+
+  function show(id) {
+    panels.forEach(function (p) { p.classList.toggle('tab-hidden', p.dataset.tab !== id); });
+    Array.prototype.forEach.call(bar.children, function (b) { b.classList.toggle('active', b.dataset.tab === id); });
+    try { history.replaceState(null, '', '#' + id); } catch (e) {}
+  }
+  var errTab = document.querySelector('fieldset.module .errorlist');
+  var start = errTab ? errTab.closest('fieldset').dataset.tab : (location.hash || '').slice(1);
+  if (!panels.some(function (p) { return p.dataset.tab === start; })) start = panels[0].dataset.tab;
+  show(start);
+
+  // ---- show "custom format" input only for "Custom..." --------------------
+  ['date_format', 'time_format'].forEach(function (name) {
+    var sel = document.getElementById('id_' + name);
+    var row = document.querySelector('.field-' + name + '_custom');
+    if (!sel || !row) return;
+    var sync = function () { row.style.display = sel.value === 'custom' ? '' : 'none'; };
+    sel.addEventListener('change', sync); sync();
+  });
+})();
+</script>
+{% endblock %}

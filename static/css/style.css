@@ -277,7 +277,7 @@ ul {
 
 .height-1000 {
   height: 1000px; }
-/*
+
 #preloader {
   position: fixed;
   width: 100%;
@@ -293,7 +293,7 @@ ul {
     margin-top: -35px;
     margin-left: -35px;
     z-index: 100; }
-  #preloader #dento-load {
+  #preloader #mcms-load {
     width: 70px;
     height: 70px;
     border-radius: 50%;
@@ -301,10 +301,10 @@ ul {
     border-style: solid;
     border-color: transparent;
     border-top-color: #00aeef;
-    -webkit-animation: dentorotate 2400ms linear infinite;
-    animation: dentorotate 2400ms linear infinite;
+    -webkit-animation: mcmsrotate 2400ms linear infinite;
+    animation: mcmsrotate 2400ms linear infinite;
     z-index: 999; }
-    #preloader #dento-load:before {
+    #preloader #mcms-load:before {
       content: "";
       position: absolute;
       top: 7.5px;
@@ -316,9 +316,9 @@ ul {
       border-style: solid;
       border-color: transparent;
       border-top-color: #00aeef;
-      -webkit-animation: dentorotate 2700ms linear infinite;
-      animation: dentorotate 2700ms linear infinite; }
-    #preloader #dento-load:after {
+      -webkit-animation: mcmsrotate 2700ms linear infinite;
+      animation: mcmsrotate 2700ms linear infinite; }
+    #preloader #mcms-load:after {
       content: "";
       position: absolute;
       top: 20px;
@@ -330,17 +330,17 @@ ul {
       border-style: solid;
       border-color: transparent;
       border-top-color: #00aeef;
-      -webkit-animation: dentorotate 1800ms linear infinite;
-      animation: dentorotate 1800ms linear infinite; }
+      -webkit-animation: mcmsrotate 1800ms linear infinite;
+      animation: mcmsrotate 1800ms linear infinite; }
 
-@-webkit-keyframes dentorotate {
+@-webkit-keyframes mcmsrotate {
   0% {
     -webkit-transform: rotate(0deg);
     transform: rotate(0deg); }
   100% {
     -webkit-transform: rotate(360deg);
     transform: rotate(360deg); } }
-@keyframes dentorotate {
+@keyframes mcmsrotate {
   0% {
     -webkit-transform: rotate(0deg);
     transform: rotate(0deg); }
@@ -373,7 +373,7 @@ ul {
   .section-heading.text-center .line {
     margin: 0 auto; }
   .section-heading.white h2 {
-    color: #ffffff; }*/
+    color: #ffffff; }
 
 #scrollUp {
   bottom: 50px;
@@ -392,7 +392,7 @@ ul {
   #scrollUp:focus, #scrollUp:hover {
     background-color: #000; }
 
-.dento-btn {
+.mcms-btn {
   position: relative;
   z-index: 1;
   min-width: 170px;
@@ -412,28 +412,28 @@ ul {
   transition: all 500ms;
   border: 2px solid #00aeef; }
   @media only screen and (max-width: 767px) {
-    .dento-btn {
+    .mcms-btn {
       min-width: 120px;
       padding: 0 10px; } }
   @media only screen and (min-width: 576px) and (max-width: 767px) {
-    .dento-btn {
+    .mcms-btn {
       min-width: 170px;
       padding: 0 20px; } }
-  .dento-btn.active, .dento-btn:focus, .dento-btn:hover {
+  .mcms-btn.active, .mcms-btn:focus, .mcms-btn:hover {
     box-shadow: none;
     background-color: transparent;
     color: #00aeef; }
-  .dento-btn.btn-2:focus, .dento-btn.btn-2:hover {
+  .mcms-btn.btn-2:focus, .mcms-btn.btn-2:hover {
     background-color: #ffffff;
     color: #00aeef; }
-  .dento-btn.booking-btn {
+  .mcms-btn.booking-btn {
     color: #ffffff !important;
     font-weight: 600;
     min-width: 140px;
     height: 40px;
     line-height: 36px;
     font-size: 12px; }
-    .dento-btn.booking-btn:focus, .dento-btn.booking-btn:hover {
+    .mcms-btn.booking-btn:focus, .mcms-btn.booking-btn:hover {
       font-size: 12px;
       font-weight: 600;
       background-color: #ffffff;
@@ -728,19 +728,19 @@ ul {
     padding: 30px;
     height: 120px; }
 
-.dento-pricing-table-area {
+.mcms-pricing-table-area {
   position: relative;
   z-index: 1; }
 
-.dento-price-table {
+.mcms-price-table {
   position: relative;
   z-index: 1; }
-  .dento-price-table table thead tr > td,
-  .dento-price-table table thead tr > th {
+  .mcms-price-table table thead tr > td,
+  .mcms-price-table table thead tr > th {
     background-color: #00aeef;
     color: #ffffff; }
-  .dento-price-table table tr > td,
-  .dento-price-table table tr > th {
+  .mcms-price-table table tr > td,
+  .mcms-price-table table tr > th {
     padding: 15px 30px;
     border-radius: 3px;
     border: 4px solid #ffffff;
@@ -748,8 +748,8 @@ ul {
     font-weight: 600;
     color: #707070; }
     @media only screen and (max-width: 767px) {
-      .dento-price-table table tr > td,
-      .dento-price-table table tr > th {
+      .mcms-price-table table tr > td,
+      .mcms-price-table table tr > th {
         padding: 10px 15px;
         font-size: 12px; } }
 
@@ -804,12 +804,12 @@ ul {
   .single-service--area:focus .icon--, .single-service--area:hover .icon-- {
     box-shadow: 0 2px 50px 0 rgba(0, 0, 0, 0.15); }
 
-.dento-video-area {
+.mcms-video-area {
   position: relative;
   z-index: 1; }
-  .dento-video-area img {
+  .mcms-video-area img {
     width: 100%; }
-  .dento-video-area .video-play-button {
+  .mcms-video-area .video-play-button {
     position: absolute;
     width: 60px;
     height: 60px;
@@ -823,7 +823,7 @@ ul {
     text-align: center;
     line-height: 60px;
     font-size: 20px; }
-    .dento-video-area .video-play-button:focus, .dento-video-area .video-play-button:hover {
+    .mcms-video-area .video-play-button:focus, .mcms-video-area .video-play-button:hover {
       background-color: #000;
       color: #ffffff; }
 
@@ -844,14 +844,14 @@ ul {
       .single-skills-area h6 {
         font-size: 14px; } }
 
-.dento-border {
+.mcms-border {
   position: relative;
   z-index: 1;
   width: 100%;
   height: 2px;
   background-color: #f4f4f4; }
 
-.dento-cta-area {
+.mcms-cta-area {
   position: relative;
   z-index: 1; }
 
@@ -1028,10 +1028,10 @@ ul {
           max-width: 100%;
           width: 100%; } }
  
-.dento-pagination {
+.mcms-pagination {
   position: relative;
   z-index: 1; }
-  .dento-pagination .pagination .page-item .page-link {
+  .mcms-pagination .pagination .page-item .page-link {
     width: 40px;
     height: 40px;
     border-radius: 3px;
@@ -1042,11 +1042,11 @@ ul {
     background-color: transparent;
     color: #707070;
     font-size: 16px; }
-    .dento-pagination .pagination .page-item .page-link:focus, .dento-pagination .pagination .page-item .page-link:hover {
+    .mcms-pagination .pagination .page-item .page-link:focus, .mcms-pagination .pagination .page-item .page-link:hover {
       background-color: #00aeef;
       border-color: #00aeef;
       color: #ffffff; }
-  .dento-pagination .pagination .page-item.active .page-link {
+  .mcms-pagination .pagination .page-item.active .page-link {
     background-color: #00aeef;
     border-color: #00aeef;
     color: #ffffff; }
@@ -1235,20 +1235,20 @@ ul {
     margin-bottom: 30px;
     font-weight: 500; }
 
-.dento-blockquote {
+.mcms-blockquote {
   position: relative;
   z-index: 1;
   margin-bottom: 30px; }
-  .dento-blockquote .icon {
+  .mcms-blockquote .icon {
     -webkit-box-flex: 0;
     -ms-flex: 0 0 70px;
     flex: 0 0 70px;
     max-width: 70px;
     width: 70px; }
-    .dento-blockquote .icon i {
+    .mcms-blockquote .icon i {
       font-size: 48px;
       color: #b7b7b7; }
-  .dento-blockquote .text h5 {
+  .mcms-blockquote .text h5 {
     font-size: 18px;
     font-style: italic;
     margin-bottom: 15px;
@@ -1256,16 +1256,16 @@ ul {
     line-height: 1.7;
     font-weight: 400; }
     @media only screen and (max-width: 767px) {
-      .dento-blockquote .text h5 {
+      .mcms-blockquote .text h5 {
         font-size: 16px; } }
-  .dento-blockquote .text h6 {
+  .mcms-blockquote .text h6 {
     color: #333333;
     font-size: 18px; }
-    .dento-blockquote .text h6 span {
+    .mcms-blockquote .text h6 span {
       font-size: 12px;
       color: #00aeef; }
     @media only screen and (max-width: 767px) {
-      .dento-blockquote .text h6 {
+      .mcms-blockquote .text h6 {
         font-size: 16px; } }
 
 .post-share-area a {
@@ -1487,18 +1487,18 @@ ul {
     .copywrite-content p a {
       color: #ffffff; }
 
-.dento-contact-area {
+.mcms-contact-area {
   position: relative;
   z-index: 1; }
-  .dento-contact-area .google-maps {
+  .mcms-contact-area .google-maps {
     position: relative;
     z-index: 1;
     width: 100%;
     height: 470px; }
     @media only screen and (max-width: 767px) {
-      .dento-contact-area .google-maps {
+      .mcms-contact-area .google-maps {
         height: 280px; } }
-    .dento-contact-area .google-maps iframe {
+    .mcms-contact-area .google-maps iframe {
       width: 100%;
       height: 100%;
       border: none; }

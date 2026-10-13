@@ -4,7 +4,7 @@ templates/layout.html - THE BASE TEMPLATE of the whole site
 ==============================================================================
 Every public page extends this file:
     {% extends "layout.html" %}
-It is a purchased/adapted "Dento" HTML theme turned into a Django template.
+It is a purchased/adapted "mCMS" HTML theme turned into a Django template.
 
 BLOCKS a child template can override
 ------------------------------------
@@ -22,21 +22,26 @@ CONTEXT VARIABLES this layout reads (all optional)
                   [("Blog","/posts/"),("Post","")] -> Home > Blog > Post
                 The LAST pair is rendered as plain text (current page), so its
                 url is ignored. See docs/breadcrumbs.md.
+  site          admin -> Settings (siteconfig.SiteSettings): site.site_title, site.site_description,
+                site.logo, site.favicon, site.admin_email, site.location, site.format_date(...).
+                Added by the 'siteconfig.context_processors.site_settings' context processor.
   request       added by the 'request' context processor; needed by
                 {% render_menu %} to highlight the current menu item.
 
 TEMPLATE TAGS used
 ------------------
   {% load static %}      -> {% static 'css/style.css' %} resolves files from /static/
+  {% load posts_tags %}  -> {% categories_widget %} / {% recent_posts_widget 5 %} (sidebar boxes, posts app)
+  {% load site_tags %}   -> {{ value|site_date }} / |site_time / |site_datetime (formats from admin -> Settings)
   {% load menu_tags %}   -> {% render_menu 'primary' %} / {% render_menu 'footer' %}
                             (menus/templatetags/menu_tags.py; menus edited in
                             admin -> Menus -> "Edit structure")
 
 KNOWN PLACEHOLDERS (static demo content from the theme, not yet dynamic)
 -----------------------------------------------------------------------
-  * Top bar address / e-mail / social links, "Booking Now" button
-  * Second "Single Blog Item" card, pagination, sidebar widgets (search,
-    categories, recent news, ad banner)
+  * Top bar social links, "Booking Now" button (address/e-mail/logo/title/favicon are now dynamic: admin -> Settings)
+  * Second "Single Blog Item" card, pagination, sidebar ad banner
+    (categories + recent posts are now dynamic)
   * Footer text, opening hours, newsletter form, contact info
   * Image paths like ./img/... point to files that are NOT in /static/ yet,
     so those images are broken until they are added and wired with {% static %}.
@@ -45,23 +50,23 @@ Replace these with real data/blocks as the site grows.
 {% endcomment %}
 
 <!DOCTYPE html>
-{% load static menu_tags %}
+{% load static menu_tags site_tags posts_tags %}
 <html lang="en">
 
 <head>
   <meta charset="UTF-8">
-  <meta name="description" content="Dento - Dentist &amp; Medical HTML Template">
+  <meta name="description" content="{{ site.site_description|default:site.site_title }}">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
   {% comment %}
   Browser tab title. Child templates override {% block title %}. 
 {% endcomment %}
- <title>{% block title %}mCMS 5{% endblock %}</title>
+ <title>{% block title %}{{ site.site_title }}{% endblock %}</title>
 
 
   <!-- Favicon -->
-  <link rel="icon" href="./img/core-img/favicon.ico">
+  {% if site.favicon %}<link rel="icon" href="{{ site.favicon.url }}">{% endif %}
 
   {% comment %}
   Stylesheets (served from the project's ./static folder via {% static %}).
@@ -82,6 +87,7 @@ Replace these with real data/blocks as the site grows.
     <link rel="stylesheet" href="{% static 'css/magnific-popup.css' %}">
     <link rel="stylesheet" href="{% static 'css/font-awesome.min.css' %}">
     <link rel="stylesheet" href="{% static 'css/style.oth.css' %}">
+    <link rel="stylesheet" href="{% static 'css/mcms-columns.css' %}">{# responsive editor columns, see docs/editor-columns.md #}
 
 </head>
 
@@ -89,7 +95,7 @@ Replace these with real data/blocks as the site grows.
   <!-- Preloader overlay; hidden by the theme JS (static/js/default-assets/active.js) once the page loads -->
   <div id="preloader">
     <div class="preload-content">
-      <div id="dento-load"></div>
+      <div id="mcms-load"></div>
     </div>
   </div>
 
@@ -102,8 +108,8 @@ Replace these with real data/blocks as the site grows.
           <!-- Top Content -->
           <div class="col-6 col-md-9 col-lg-8">
             <div class="top-header-content">
-              <a href="#" data-toggle="tooltip" data-placement="bottom" title="28 Jackson Street, Chicago, 7788569 USA"><i class="fa fa-map-marker"></i> <span>Str 28,  Plovdiv, 4000, Bulgaria</span></a>
-              <a href="#" data-toggle="tooltip" data-placement="bottom" title="me@gmail.bg"><i class="fa fa-envelope"></i> <span>me@gmail.bg</span></a>
+              {% if site.location %}<a href="#" data-toggle="tooltip" data-placement="bottom" title="{{ site.location }}"><i class="fa fa-map-marker"></i> <span>{{ site.location }}</span></a>{% endif %}
+              {% if site.admin_email %}<a href="mailto:{{ site.admin_email }}" data-toggle="tooltip" data-placement="bottom" title="{{ site.admin_email }}"><i class="fa fa-envelope"></i> <span>{{ site.admin_email }}</span></a>{% endif %}
             </div>
           </div>
           <!-- Top Header Social Info -->
@@ -126,10 +132,10 @@ Replace these with real data/blocks as the site grows.
       <div class="classy-nav-container breakpoint-off">
         <div class="container">
           <!-- Classy Menu -->
-          <nav class="classy-navbar justify-content-between" id="dentoNav">
+          <nav class="classy-navbar justify-content-between" id="mcmsNav">
 
             <!-- Logo -->
-            <a class="nav-brand" href="index.html"><img src="./img/core-img/logo.png" alt=""></a>
+            <a class="nav-brand" href="/">{% if site.logo %}<img src="{{ site.logo.url }}" alt="{{ site.site_title }}">{% else %}{{ site.site_title }}{% endif %}</a>
 
             <!-- Navbar Toggler -->
             <div class="classy-navbar-toggler">
@@ -153,7 +159,7 @@ Replace these with real data/blocks as the site grows.
             </div>
 
             <!-- Booking Now Button -->
-            <a href="#" class="btn dento-btn booking-btn">Booking Now</a>
+            <a href="#" class="btn mcms-btn booking-btn">Booking Now</a>
           </nav>
         </div>
       </div>
@@ -174,7 +180,7 @@ Replace these with real data/blocks as the site grows.
     <div class="container h-100">
       <div class="row h-100 align-items-center">
         <div class="col-12">
-          <h2 class="title">{{ page_title|default:"mCMS 5" }}</h2>
+          <h2 class="title">{{ page_title|default:site.site_title }}</h2>
         </div>
       </div>
     </div>
@@ -209,7 +215,7 @@ Replace these with real data/blocks as the site grows.
   <!-- ***** Breadcrumb Area End ***** -->
 
   <!-- *****Blog Area Start ***** (main content + sidebar; the 8/4 column split is Bootstrap's grid) -->
-  <section class="dento-blog-area mt-50">
+  <section class="mcms-blog-area mt-50">
     <div class="container">
       <div class="row">
         <div class="col-12 col-lg-8">
@@ -223,42 +229,15 @@ Replace these with real data/blocks as the site grows.
                 
             </div>
             <!-- Blog Content -->
-            <div class="blog-content">
+            <div class="blog-content flex-grow-1" style="min-width:0">
                   
               <a href="./blog-details.html" class="post-title">    </a>
               {# BLOCK "content": the main body of every page. #}
-              <p>  {% block content %}
-    {% endblock %}</p>
-              <div class="post-meta">
-                <a href="#"><i class="icon_clock_alt"></i> 28 Sep 2026</a>
-                <a href="#"><i class="icon_chat_alt"></i> 3 Comments</a>
-              </div>
+              <div>{% block content %}  {% endblock %}</div>
             </div>
           </div>
-
-    
-
-          <!-- PLACEHOLDER demo blog card (static theme content, not dynamic) -->
-          <div class="single-blog-item style-2 d-flex flex-wrap align-items-center mb-50">
-            <!-- Blog Thumbnail -->
-            <div class="blog-thumbnail">
-              <a href="./blog-details.html">
-                <img src="./img/bg-img/20.jpg" alt="">
-              </a>
-            </div>
-            <!-- Blog Content -->
-            <div class="blog-content">
-              <a href="./blog-details.html" class="post-title">Lie bumps (transient lingual papillitis): What to know</a>
-              <p>Donec tempor, lorem et euismod eleifend, est lectus laoreet ante, sed accusan justo diam nec tincidunt interdum ante consectetur dapibus molestie ...</p>
-              <div class="post-meta">
-                <a href="#"><i class="icon_clock_alt"></i> 28 Sep 2026</a>
-                <a href="#"><i class="icon_chat_alt"></i> 3 Comments</a>
-              </div>
-            </div>
-          </div>
-
           <!-- Pagination -->
-          <nav class="dento-pagination mb-100">
+          <nav class="mcms-pagination mb-100">
             <ul class="pagination">
               <li class="page-item active"><a class="page-link" href="#">1</a></li>
               <li class="page-item"><a class="page-link" href="#">2</a></li>
@@ -269,67 +248,21 @@ Replace these with real data/blocks as the site grows.
 
         <!-- Sidebar Area (PLACEHOLDER theme content: search, categories, recent news, ad) -->
         <div class="col-12 col-lg-4">
-          <div class="dento-sidebar">
+          <div class="mcms-sidebar">
 
             <!-- Single Widget Area -->
             <div class="single-widget-area search-widget">
-              <form action="#" method="post">
-                <input type="search" name="search" class="form-control" placeholder="Search ...">
-                <button type="submit"><i class="icon_search"></i></button>
+              {# Site search: GET /search/?q=... (search app, docs/search.md) #}
+              <form action="{% url 'search' %}" method="get" role="search">
+                <input type="search" name="q" value="{{ request.GET.q }}" class="form-control" placeholder="Search..." aria-label="Search">
+                <button type="submit"><i class="fa fa-search"></i></button>
               </form>
             </div>
 
-            <!-- Single Widget Area -->
-            <div class="single-widget-area catagories-widget">
-              <h5 class="widget-title">Categories</h5>
+            {# Dynamic widgets from the posts app (posts/templatetags/posts_tags.py). #}
+            {% categories_widget %}
 
-              <!-- catagories list -->
-              <ul class="catagories-list">
-                <li><a href="#">Dentistry Articles</a></li>
-                <li><a href="#">Oral Health</a></li>
-                <li><a href="#">Dental Technology</a></li>
-                <li><a href="#">Kids Care Dental</a></li>
-                <li><a href="#">Healthy Smiles, Inside &amp; Out</a></li>
-              </ul>
-            </div>
-
-            <!-- Single Widget Area -->
-            <div class="single-widget-area news-widget">
-              <h5 class="widget-title">Recent News</h5>
-
-              <!-- Single News Area -->
-              <div class="single-news-area d-flex align-items-center">
-                <div class="blog-thumbnail">
-                  <img src="./img/bg-img/21.jpg" alt="">
-                </div>
-                <div class="blog-content">
-                  <a href="#" class="post-title">Tooth decay: why good dental hygiene is important</a>
-                  <span class="post-date">28 Sep 2018</span>
-                </div>
-              </div>
-
-              <!-- Single News Area -->
-              <div class="single-news-area d-flex align-items-center">
-                <div class="blog-thumbnail">
-                  <img src="./img/bg-img/22.jpg" alt="">
-                </div>
-                <div class="blog-content">
-                  <a href="#" class="post-title">Six reasons your breath might smell like poop</a>
-                  <span class="post-date">28 Sep 2026</span>
-                </div>
-              </div>
-
-              <!-- Single News Area -->
-              <div class="single-news-area d-flex align-items-center">
-                <div class="blog-thumbnail">
-                  <img src="./img/bg-img/23.jpg" alt="">
-                </div>
-                <div class="blog-content">
-                  <a href="#" class="post-title">Everything you need to know about sinus infection</a>
-                  <span class="post-date">28 Sep 2026</span>
-                </div>
-              </div>
-            </div>
+            {% recent_posts_widget 5 %}
 
             <!-- Single Widget Area -->
             <div class="single-widget-area adds-widget">
@@ -350,12 +283,12 @@ Replace these with real data/blocks as the site grows.
         <!-- Single Footer Widget -->
         <div class="col-12 col-sm-6 col-lg-4">
           <div class="single-footer-widget">
-            <a href="./index.html" class="d-block mb-4"><img src="./img/core-img/logo.png" alt=""></a>
+            <a href="/" class="d-block mb-4">{% if site.logo %}<img src="{{ site.logo.url }}" alt="{{ site.site_title }}">{% else %}{{ site.site_title }}{% endif %}</a>
             <p>Etiam sutor risus, dapibus act elefend katen, lacinia sitamet denim. Mauris sagittis kansa interdum dignissim.</p>
             <div class="footer-contact">
-              <p><i class="icon_pin"></i> 28 Plovdiv, Plovdiv, 4000 Bulgaria</p>
+              {% if site.location %}<p><i class="icon_pin"></i> {{ site.location }}</p>{% endif %}
               <p><i class="icon_phone"></i> +359 84. 2252. 2250. 122</p>
-              <p><i class="icon_mail"></i> me@gmail.bg</p>
+              {% if site.admin_email %}<p><i class="icon_mail"></i> {{ site.admin_email }}</p>{% endif %}
             </div>
           </div>
         </div>
@@ -391,32 +324,7 @@ Replace these with real data/blocks as the site grows.
           </div>
         </div>
 
-        <!-- Single Footer Widget -->
-        <div class="col-12 col-sm-6 col-lg">
-          <div class="single-footer-widget">
-            <!-- Widget Title -->
-            <h5 class="widget-title">Newsletter</h5>
-
-            <p>We will send out weekly newest article and some great offers</p>
-            <!-- Newsletter Form -->
-            <div class="footer-newsletter-form">
-              <form action="#" method="post">
-                <input type="email" name="nl-email" value="" placeholder="Email Address">
-                <button type="submit"><i class="fa fa-paper-plane" aria-hidden="true"></i></button>
-              </form>
-            </div>
-
-            <!-- Social Info -->
-            <div class="footer-social-info">
-              <a href="#" data-toggle="tooltip" data-placement="top" title="Facebook"><i class="fa fa-facebook"></i></a>
-              <a href="#" data-toggle="tooltip" data-placement="top" title="Twitter"><i class="fa fa-twitter"></i></a>
-              <a href="#" data-toggle="tooltip" data-placement="top" title="Google Plus"><i class="fa fa-google-plus"></i></a>
-              <a href="#" data-toggle="tooltip" data-placement="top" title="Linkedin"><i class="fa fa-linkedin"></i></a>
-              <a href="#" data-toggle="tooltip" data-placement="top" title="Pinterest"><i class="fa fa-pinterest"></i></a>
-            </div>
-          </div>
-        </div>
-      </div>
+        
     </div>
 
     <!-- Copywrite Area -->

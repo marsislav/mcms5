@@ -3,6 +3,7 @@ posts.urls - routes for the blog, mounted at ``/posts/`` by ``mcms5/urls.py``.
 
 Namespace ``posts``:
     posts:list  -> /posts/
+    posts:category -> /posts/category/<slug>
     posts:page  -> /posts/<slug>   (no trailing slash; ``menus.models.MenuItem.get_url``
                                     builds this URL with reverse())
 """
@@ -12,5 +13,6 @@ from . import views
 app_name = 'posts'
 urlpatterns = [
     path('', views.posts_list, name='list'),
+    path('category/<slug:slug>', views.category_posts, name='category'),
     path('<slug:slug>', views.post_page, name='page'),
 ]

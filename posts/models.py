@@ -8,6 +8,9 @@ Where this fits
 * Referenced by ``menus.models.MenuItem.post`` so a post can be placed in a
   navigation menu.
 
+Posts and categories use the Trash (``mcms5/softdelete.py``): deleting them only hides
+them; restore from the admin ("Trash: Posts" / "Trash: Categories").
+
 Depends on
 ----------
 * ``django_ckeditor_5`` (rich-text ``body``; config in ``mcms5/settings.py``).
@@ -16,10 +19,34 @@ Depends on
   that file, posts without their own banner will render a broken image.
 """
 from django.db import models
+from django.urls import reverse
 from django_ckeditor_5.fields import CKEditor5Field
 
+from mcms5.softdelete import SoftDeleteModel
 
-class Post(models.Model):
+
+class Category(SoftDeleteModel):
+    """A blog category. A post can belong to several categories.
+
+    name   Label shown in the sidebar, on posts and in the admin.
+    slug   Unique URL segment: the category lives at ``/posts/category/<slug>``.
+    """
+
+    name = models.CharField(max_length=75, unique=True)
+    slug = models.SlugField(max_length=75, unique=True)
+
+    class Meta(SoftDeleteModel.Meta):
+        ordering = ['name']
+        verbose_name_plural = 'categories'
+
+    def __str__(self):
+        return self.name
+
+    def get_absolute_url(self):
+        return reverse('posts:category', kwargs={'slug': self.slug})
+
+
+class Post(SoftDeleteModel):
     """A blog post.
 
     title   Heading; also the breadcrumb label and hero heading.
@@ -30,6 +57,8 @@ class Post(models.Model):
     date    Creation timestamp, set once automatically (``auto_now_add``);
             it cannot be edited in the admin. Used for list ordering.
     banner  Image stored under ``MEDIA_ROOT``; defaults to ``fallback.png``.
+    categories  Zero or more ``Category`` objects.
+    related     Hand-picked related posts. Symmetrical: linking A to B also links B to A.
     """
 
     title = models.CharField(max_length=75)
@@ -37,7 +66,40 @@ class Post(models.Model):
     slug = models.SlugField(max_length=75, unique=True)
     date = models.DateTimeField(auto_now_add=True)
     banner = models.ImageField(default='fallback.png', blank=True)
+    categories = models.ManyToManyField(Category, blank=True, related_name='posts')
+    related = models.ManyToManyField('self', blank=True, symmetrical=True)
 
     def __str__(self):
         """Shown in the admin lists and in the menu builder."""
         return self.title
+
+    def get_absolute_url(self):
+        return reverse('posts:page', kwargs={'slug': self.slug})
+
+    def related_posts(self, limit=4):
+        """Hand-picked related posts; if there are none, posts sharing a category (newest first)."""
+        manual = list(self.related.alive().order_by('-date')[:limit])
+        if manual:
+            return manual
+        return list(
+            Post.objects.filter(categories__in=self.categories.alive())
+            .exclude(pk=self.pk).distinct().order_by('-date')[:limit]
+        )
+
+
+class TrashedPost(Post):
+    """Proxy used only to show the Trash of posts in the admin."""
+
+    class Meta:
+        proxy = True
+        verbose_name = 'Trash: post'
+        verbose_name_plural = 'Trash: Posts'
+
+
+class TrashedCategory(Category):
+    """Proxy used only to show the Trash of categories in the admin."""
+
+    class Meta:
+        proxy = True
+        verbose_name = 'Trash: category'
+        verbose_name_plural = 'Trash: Categories'

@@ -128,11 +128,15 @@ class MenuItem(models.Model):
     def target(self):
         """Return the linked ``Page``/``Post`` object, or ``None`` for custom links
         (or when the linked object was deleted)."""
+        t = None
         if self.item_type == self.ItemType.PAGE:
-            return self.page
-        if self.item_type == self.ItemType.POST:
-            return self.post
-        return None
+            t = self.page
+        elif self.item_type == self.ItemType.POST:
+            t = self.post
+        # An object in the Trash counts as missing (the link comes back when it is restored).
+        if t is not None and t.deleted_at is not None:
+            return None
+        return t
 
     def target_missing(self):
         """True if this is a page/post item whose target no longer exists.

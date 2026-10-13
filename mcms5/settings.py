@@ -12,6 +12,8 @@ Sections in this file (top to bottom)
                           pages  - hierarchical static pages
                           menus  - navigation menus + admin menu builder
                           users  - public registration
+                          siteconfig - site-wide Settings pane in the admin
+                          search - public site search (/search/)
 3. MIDDLEWARE           standard Django stack
 4. TEMPLATES            project templates dir ``templates/`` + per-app ``templates/``;
                         context processors (``request`` is REQUIRED by ``{% render_menu %}``)
@@ -62,6 +64,8 @@ INSTALLED_APPS = [
     'pages',
     'menus',
     'users',
+    'search',        # public site search (/search/)
+    'siteconfig',   # admin -> Settings (site title, logo, formats...)
 ]
 
 # Request/response processing chain, executed top to bottom on the way in.
@@ -94,6 +98,8 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                # Adds ``site`` (admin -> Settings) to every template. See docs/settings.md.
+                'siteconfig.context_processors.site_settings',
                 # Optional/legacy, NOT enabled: 'pages.context_processors.menu_pages'
             ],
         },
@@ -197,7 +203,10 @@ CKEDITOR_5_FILE_UPLOAD_PERMISSION = "staff"
 
 # Optional: extra CSS loaded together with the editor (e.g. to make the
 # editing area look like the front-end). Put the file in static/.
-# CKEDITOR_5_CUSTOM_CSS = "css/ckeditor-custom.css"
+# Responsive COLUMNS (toolbar dropdown "Колони"): the same stylesheet is also linked
+# in templates/layout.html, so columns look identical in the editor and on the site.
+# The dropdown itself is static/js/ckeditor-columns.js (see docs/editor-columns.md).
+CKEDITOR_5_CUSTOM_CSS = "css/mcms-columns.css"
 
 # Reusable colour palette for font colour / background colour / highlight.
 _CK_COLORS = [
